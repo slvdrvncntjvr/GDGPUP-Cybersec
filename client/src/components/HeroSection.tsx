@@ -25,7 +25,7 @@ export default function HeroSection() {
               className="font-display text-4xl sm:text-5xl lg:text-[3.5rem] font-bold tracking-tight text-foreground mb-6 leading-[1.1] opacity-0 animate-slide-up"
               style={{ animationDelay: "0.1s" }}
             >
-              Cybersecurity GDG Department{" "}
+              GDG PUP Cybersecurity Department{" "}
               <span className="text-primary">— learn by doing</span>
             </h1>
 
@@ -34,8 +34,7 @@ export default function HeroSection() {
               style={{ animationDelay: "0.2s" }}
             >
               Hands-on rooms and guided paths covering blue-team defense and
-              red-team offense. Built for community learners and campus
-              chapters.
+              red-team offense. Built for community learners!
             </p>
 
             <div

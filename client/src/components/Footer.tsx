@@ -1,36 +1,23 @@
 import { Link } from "wouter";
-import { Shield, Github, Twitter, Linkedin, Youtube } from "lucide-react";
+import { Shield, Linkedin, Youtube, Facebook, Instagram } from "lucide-react";
 
+// Simplified Footer Links
 const footerLinks = {
-  Product: [
+  Platform: [
     { label: "Rooms", href: "/rooms" },
-    { label: "Learning Paths", href: "/paths" },
-    { label: "Features", href: "/features" },
-    { label: "Pricing", href: "/pricing" },
+    { label: "Dashboard", href: "/dashboard" },
   ],
   Community: [
-    { label: "Chapters", href: "/chapters" },
-    { label: "Events", href: "/events" },
-    { label: "Blog", href: "/blog" },
-    { label: "Discord", href: "#" },
+    { label: "Community Hub", href: "/community" },
   ],
-  Resources: [
-    { label: "Documentation", href: "/docs" },
-    { label: "API", href: "/api" },
-    { label: "Status", href: "/status" },
-    { label: "Changelog", href: "/changelog" },
-  ],
-  Company: [
+  "About Us": [
     { label: "About", href: "/about" },
-    { label: "Careers", href: "/careers" },
-    { label: "Contact", href: "/contact" },
-    { label: "Privacy", href: "/privacy" },
   ],
 };
 
 const socialLinks = [
-  { icon: Github, href: "#", label: "GitHub" },
-  { icon: Twitter, href: "#", label: "Twitter" },
+  { icon: Facebook, href: "#", label: "Facebook" },
+  { icon: Instagram, href: "#", label: "Instagram" },
   { icon: Linkedin, href: "#", label: "LinkedIn" },
   { icon: Youtube, href: "#", label: "YouTube" },
 ];
@@ -41,6 +28,8 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-12 md:py-16">
           <div className="grid grid-cols-2 md:grid-cols-6 gap-8">
+            
+            {/* Logo and Socials Column */}
             <div className="col-span-2">
               <Link href="/">
                 <div className="flex items-center gap-3 mb-4 cursor-pointer">
@@ -49,7 +38,7 @@ export default function Footer() {
                   </div>
                   <div>
                     <span className="font-display font-semibold text-foreground block">
-                      Cybersecurity GDG
+                      GDG Cybersecurity
                     </span>
                     <span className="text-xs text-muted-foreground">
                       Learn security by doing
@@ -78,8 +67,9 @@ export default function Footer() {
               </div>
             </div>
 
+            {/* Links Columns */}
             {Object.entries(footerLinks).map(([category, links]) => (
-              <div key={category}>
+              <div key={category} className="col-span-1">
                 <h3 className="font-semibold text-foreground mb-4 text-sm">
                   {category}
                 </h3>
@@ -101,19 +91,11 @@ export default function Footer() {
 
         <div className="py-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            2024 Cybersecurity GDG Department. All rights reserved.
+            &copy; 2025-2026 GDG PUP Cybersecurity Department. All rights reserved.
           </p>
 
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <Link href="/terms">
-              <span className="hover:text-foreground cursor-pointer">Terms</span>
-            </Link>
-            <Link href="/privacy">
-              <span className="hover:text-foreground cursor-pointer">Privacy</span>
-            </Link>
-            <Link href="/cookies">
-              <span className="hover:text-foreground cursor-pointer">Cookies</span>
-            </Link>
+            <span className="hover:text-foreground cursor-pointer">Term 4</span>
           </div>
         </div>
       </div>
