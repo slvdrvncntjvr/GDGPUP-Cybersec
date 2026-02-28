@@ -21,6 +21,10 @@ import {
   ArrowRight,
   X,
 } from "lucide-react";
+import red_logo from "./GDGCybersec-Assets/GDG-ascii-red-transparent.png";
+import blue_logo from "./GDGCybersec-Assets/GDG-ascii-blue-transparent.png";
+
+
 
 interface Challenge {
   id: string;
@@ -84,6 +88,16 @@ export default function RoomDetailModal({
               : "bg-gradient-to-br from-cyber-red/20 to-cyber-red/5"
           )}
         >
+
+          <img
+            src={room.team === "blue" ? blue_logo : red_logo}
+            alt={room.team === "blue" ? "Blue Team" : "Red Team"}
+            className={cn(
+              "absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none",
+              room.team === "blue" ? "glow-blue" : "glow-red"
+            )}
+          />
+
           <Button
             variant="ghost"
             size="icon"
@@ -313,4 +327,16 @@ export default function RoomDetailModal({
       </DialogContent>
     </Dialog>
   );
+  <style>{`
+      @keyframes glowPulse {
+        0%, 100% { filter: drop-shadow(0 0 20px rgba(59,130,246,0.6)); }
+        50%       { filter: drop-shadow(0 0 50px rgba(59,130,246,1)); }
+      }
+      @keyframes glowPulseRed {
+        0%, 100% { filter: drop-shadow(0 0 20px rgba(239,68,68,0.6)); }
+        50%       { filter: drop-shadow(0 0 50px rgba(239,68,68,1)); }
+      }
+      .glow-blue { animation: glowPulse 3s ease-in-out infinite; }
+      .glow-red  { animation: glowPulseRed 3s ease-in-out infinite; }
+    `}</style>
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import logo from "./GDGCybersec-Assets/Cybersec_transparent.png";
 
 export default function Shield3D() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -116,111 +117,24 @@ export default function Shield3D() {
       >
         <svg
           viewBox="0 0 220 250"
-          className="w-64 h-64 md:w-80 md:h-80"
+          className="w-64 h-64 md:w-80 md:h-80 absolute"
           style={{ transformStyle: "preserve-3d" }}
         >
-          <defs>
-            <linearGradient id="shieldMain" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="hsl(152, 80%, 55%)" />
-              <stop offset="50%" stopColor="hsl(152, 76%, 45%)" />
-              <stop offset="100%" stopColor="hsl(152, 72%, 32%)" />
-            </linearGradient>
-            
-            <linearGradient id="shieldInner" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="hsl(152, 85%, 60%)" />
-              <stop offset="100%" stopColor="hsl(152, 75%, 40%)" />
-            </linearGradient>
-            
-            <linearGradient id="shieldGloss" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="white" stopOpacity="0.5" />
-              <stop offset="40%" stopColor="white" stopOpacity="0.1" />
-              <stop offset="100%" stopColor="white" stopOpacity="0" />
-            </linearGradient>
-            
-            <linearGradient id="rimGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="hsl(152, 90%, 70%)" />
-              <stop offset="50%" stopColor="hsl(152, 80%, 50%)" />
-              <stop offset="100%" stopColor="hsl(152, 70%, 35%)" />
-            </linearGradient>
-
-            <filter id="shieldGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
-              <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.13  0 0 0 0 0.77  0 0 0 0 0.37  0 0 0 1 0" result="glow" />
-              <feMerge>
-                <feMergeNode in="glow" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-            
-            <filter id="innerShadow">
-              <feOffset dx="0" dy="4" />
-              <feGaussianBlur stdDeviation="4" result="offset-blur" />
-              <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse" />
-              <feFlood floodColor="black" floodOpacity="0.4" result="color" />
-              <feComposite operator="in" in="color" in2="inverse" result="shadow" />
-              <feComposite operator="over" in="shadow" in2="SourceGraphic" />
-            </filter>
-          </defs>
-          
-          <ellipse cx="110" cy="225" rx="45" ry="8" fill="hsl(200, 25%, 5%)" opacity="0.7">
+          <ellipse cx="110" cy="240" rx="45" ry="10" fill="hsl(200, 25%, 5%)" opacity="0.7">
             <animate attributeName="rx" values="45;50;45" dur="5s" repeatCount="indefinite" />
             <animate attributeName="opacity" values="0.7;0.4;0.7" dur="5s" repeatCount="indefinite" />
           </ellipse>
-          
-          <g transform="translate(110, 110)" filter="url(#shieldGlow)">
-            <path
-              d="M0,-85 L70,-58 L70,22 C70,62 38,85 0,102 C-38,85 -70,62 -70,22 L-70,-58 Z"
-              fill="url(#shieldMain)"
-              stroke="url(#rimGradient)"
-              strokeWidth="4"
-            />
-            
-            <path
-              d="M0,-75 L60,-52 L60,18 C60,52 32,72 0,88 C-32,72 -60,52 -60,18 L-60,-52 Z"
-              fill="url(#shieldInner)"
-              opacity="0.9"
-            />
-            
-            <path
-              d="M0,-70 L50,-48 L50,12 C50,42 28,60 0,74 C-28,60 -50,42 -50,12 L-50,-48 Z"
-              fill="url(#shieldGloss)"
-              opacity="0.6"
-            />
-            
-            <path
-              d="M-25,-60 L-25,-45 L-40,-45"
-              fill="none"
-              stroke="white"
-              strokeWidth="1.5"
-              opacity="0.4"
-              strokeLinecap="round"
-            />
-            <path
-              d="M40,-55 L40,-42"
-              fill="none"
-              stroke="white"
-              strokeWidth="1"
-              opacity="0.2"
-              strokeLinecap="round"
-            />
-            
-            <g filter="url(#innerShadow)">
-              <path
-                d="M-20,8 L-5,23 L28,-12"
-                fill="none"
-                stroke="white"
-                strokeWidth="9"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="check-animate"
-              />
-            </g>
-            
-            <circle cx="0" cy="-60" r="3" fill="white" opacity="0.8">
-              <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite" />
-            </circle>
-          </g>
         </svg>
+
+        <img
+          src= {logo}
+          alt="GDG Cybersecurity Logo"
+          className="w-64 h-64 md:w-80 md:h-80 object-contain"
+          style={{
+            transformStyle: "preserve-3d",
+            filter: "drop-shadow(0 0 25px rgba(34, 197, 94, 0.5)) drop-shadow(0 0 50px rgba(34, 197, 94, 0.3))",
+          }}
+        />
       </div>
 
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

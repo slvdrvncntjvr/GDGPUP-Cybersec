@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { Shield, Github, Twitter, Linkedin, Youtube } from "lucide-react";
+import logo from "./GDGCybersec-Assets/GDGAscii2.1.png";
 
 const footerLinks = {
   Product: [
@@ -44,9 +45,11 @@ export default function Footer() {
             <div className="col-span-2">
               <Link href="/">
                 <div className="flex items-center gap-3 mb-4 cursor-pointer">
-                  <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center border border-primary/20">
-                    <Shield className="w-5 h-5 text-primary" />
-                  </div>
+                  <img
+                    src={logo}
+                    alt="Logo"
+                    className="w-10 h-10 object-contain"  // GDG Logo (ASCII)
+                    />
                   <div>
                     <span className="font-display font-semibold text-foreground block">
                       Cybersecurity GDG

@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { Bot, X, Send, Minimize2, Maximize2, GripVertical } from "lucide-react";
+import { X, Send, Minimize2, Maximize2, GripVertical } from "lucide-react";
+import logo from "./GDGCybersec-Assets/sparky_head.png";
 
 interface Message {
   id: string;
@@ -116,8 +117,8 @@ export default function FloatingSupportBot() {
     }, 1500);
   };
 
-  return (
-    <>
+  return ( 
+    <>  
       <style>{`
         @keyframes botPulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
@@ -152,7 +153,11 @@ export default function FloatingSupportBot() {
             className="bot-button w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/30 transition-transform"
             data-testid="button-open-support-bot"
           >
-            <Bot className="w-6 h-6" />
+            <img
+              src={logo}
+              alt='Chat Support'
+              className="w-8 h-8 object-contain"
+            />
           </button>
         ) : (
           <div
@@ -166,7 +171,11 @@ export default function FloatingSupportBot() {
               <div className="flex items-center gap-2">
                 <GripVertical className="w-4 h-4 text-muted-foreground" />
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Bot className="w-4 h-4 text-primary" />
+                  <img
+                    src={logo}
+                    alt='bot'
+                    className="w-6 h-6 object-contain"
+                  />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-foreground">Support Assistant</p>
