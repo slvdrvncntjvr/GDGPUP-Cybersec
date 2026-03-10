@@ -14,6 +14,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // Simplified Nav Structure
+import AuthModal from "./AuthModal";
+import logo from "./GDGCybersec-Assets/GDGAscii2.1.png";
 interface NavLink {
   label: string;
   href: string;
@@ -112,9 +114,29 @@ export default function Navbar() {
             <Link href="/" data-testid="link-home">
               <div className="flex items-center gap-3 group cursor-pointer">
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center border border-primary/20 group-hover:border-primary/40 transition-colors">
-                    <Shield className="w-5 h-5 text-primary" />
-                  </div>
+                  
+                <img
+                src={logo}
+                alt="Logo"
+                className="w-10 h-10 object-contain"  // expanding logo
+                onMouseEnter={(e) => {
+                  const img = e.currentTarget;
+                    img.style.transform = 'scale(1.5)';
+                    img.style.filter = `
+                      drop-shadow(0 0 6px rgba(34, 197, 94, 1)) 
+                      drop-shadow(0 0 12px rgba(34, 197, 94, 0.9)) 
+                      drop-shadow(0 0 25px rgba(34, 197, 94, 0.7))
+                    `;
+                    img.style.transition = 'all 0.3s ease';
+                  }}
+                  onMouseLeave={(e) => {
+                    const img = e.currentTarget;
+                    img.style.transform = 'scale(1)';
+                    img.style.filter = 'none';
+                    img.style.transition = 'all 0.3s ease';
+                  }}
+                />
+                  
                   <div className="absolute inset-0 rounded-md bg-primary/20 blur-xl opacity-0 group-hover:opacity-50 transition-opacity" />
                 </div>
                 <div className="flex flex-col">
@@ -320,13 +342,3 @@ export default function Navbar() {
     </>
   );
 }
-
-/**
- * Dev tip:
- * To simulate logged-in:
- * localStorage.setItem("gdg_user", JSON.stringify({ name: "Sparky", avatarUrl: "" }))
- * location.reload()
- *
- * To logout:
- * localStorage.removeItem("gdg_user"); location.reload()
- */
