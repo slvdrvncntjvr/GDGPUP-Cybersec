@@ -1,3 +1,5 @@
+import type { LucideIcon } from "lucide-react";
+
 export type Team = "blue" | "red";
 
 export type UserSummary = {
@@ -14,6 +16,7 @@ export type UserSummary = {
 export type RoomCard = {
   id: string;
   name: string;
+  icon: LucideIcon;
   team: Team;
   difficulty: "Beginner" | "Intermediate" | "Advanced";
 };

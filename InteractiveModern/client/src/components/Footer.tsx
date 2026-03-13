@@ -4,28 +4,28 @@ import logo from "./GDGCybersec-Assets/GDGAscii2.1.png";
 
 const footerLinks = {
   Product: [
+    { label: "Home", href: "/" },
     { label: "Rooms", href: "/rooms" },
-    { label: "Learning Paths", href: "/paths" },
-    { label: "Features", href: "/features" },
-    { label: "Pricing", href: "/pricing" },
+    { label: "Community Hub", href: "/community" },
+    { label: "My Progress", href: "/dashboard" },
   ],
   Community: [
-    { label: "Chapters", href: "/chapters" },
-    { label: "Events", href: "/events" },
-    { label: "Blog", href: "/blog" },
-    { label: "Discord", href: "#" },
+    { label: "Join Community", href: "/community" },
+    { label: "Events", href: "/community" },
+    { label: "Study Jams", href: "/community" },
+    { label: "Discord", href: "/community" },
   ],
   Resources: [
-    { label: "Documentation", href: "/docs" },
-    { label: "API", href: "/api" },
-    { label: "Status", href: "/status" },
-    { label: "Changelog", href: "/changelog" },
+    { label: "Rooms Catalog", href: "/rooms" },
+    { label: "Team Paths", href: "/rooms" },
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Community Guide", href: "/community" },
   ],
   Company: [
-    { label: "About", href: "/about" },
-    { label: "Careers", href: "/careers" },
-    { label: "Contact", href: "/contact" },
-    { label: "Privacy", href: "/privacy" },
+    { label: "About", href: "/community" },
+    { label: "Contact", href: "/community" },
+    { label: "Privacy", href: "/community" },
+    { label: "Terms", href: "/community" },
   ],
 };
 
@@ -108,13 +108,13 @@ export default function Footer() {
           </p>
 
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <Link href="/terms">
+            <Link href="/community">
               <span className="hover:text-foreground cursor-pointer">Terms</span>
             </Link>
-            <Link href="/privacy">
+            <Link href="/community">
               <span className="hover:text-foreground cursor-pointer">Privacy</span>
             </Link>
-            <Link href="/cookies">
+            <Link href="/community">
               <span className="hover:text-foreground cursor-pointer">Cookies</span>
             </Link>
           </div>
