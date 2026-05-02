@@ -1,27 +1,15 @@
+import { setupApp } from "../server/app";
+
 // Cache the configured Express app across warm invocations of the same
 // serverless function instance (avoids re-running passport/session setup).
-let appPromise: Promise<((req: any, res: any) => void) | null> | null = null;
 let startupError: Error | null = null;
-
-async function getApp() {
-  if (appPromise) return appPromise;
-
-  appPromise = (async () => {
-    try {
-      // Lazy import so import-time failures are captured and returned as JSON.
-      const mod = await import("../server/app");
-      return await mod.setupApp();
-    } catch (err: unknown) {
-      startupError = err instanceof Error ? err : new Error(String(err));
-      return null;
-    }
-  })();
-
-  return appPromise;
-}
+const appReady = setupApp().catch((err: unknown) => {
+  startupError = err instanceof Error ? err : new Error(String(err));
+  return null;
+});
 
 export default async function handler(req: any, res: any) {
-  const app = await getApp();
+  const app = await appReady;
   if (!app) {
     const message = startupError?.message ?? "Server initialization failed";
     const stack = startupError?.stack;
