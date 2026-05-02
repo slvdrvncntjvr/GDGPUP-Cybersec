@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { openAuthModal } from "@/lib/openAuthModal";
 import {
   Dialog,
   DialogContent,
@@ -132,6 +133,17 @@ export default function RoomDetailModal({
       team: room.team,
     });
     
+  };
+
+  const handlePrimaryAction = () => {
+    setActiveTab("challenges");
+    if (!isLoggedIn) {
+      toast({
+        title: "Create your account",
+        description: "Sign up or log in to start submitting flags.",
+      });
+      openAuthModal("signup");
+    }
   };
 
   return (
@@ -383,6 +395,7 @@ export default function RoomDetailModal({
               variant={room.team === "blue" ? "default" : "destructive"}
               className="gap-2"
               data-testid="button-continue-room"
+              onClick={handlePrimaryAction}
             >
               {room.progress ? "Continue Room" : "Start Room"}
               <ArrowRight className="w-4 h-4" />

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -34,6 +34,8 @@ const teamIconBox: Record<RoomCard["team"], { bg: string; text: string }> = {
 };
 
 export default function RoomsCompleted({ rooms }: Props) {
+  const [, setLocation] = useLocation();
+
   return (
     <section className="mb-8">
       <div className="mb-3 inline-flex rounded-md bg-muted px-3 py-1 text-sm font-medium">
@@ -43,9 +45,13 @@ export default function RoomsCompleted({ rooms }: Props) {
       {rooms.length === 0 ? (
         <div className="rounded-2xl bg-card border border-border/50 p-6 text-sm text-muted-foreground">
           No rooms completed yet.{" "}
-          <Link href="/rooms">
-            <a className="text-primary underline-offset-4 hover:underline">Browse rooms</a>
-          </Link>{" "}
+          <button
+            type="button"
+            className="text-primary underline-offset-4 hover:underline"
+            onClick={() => setLocation("/rooms")}
+          >
+            Browse rooms
+          </button>{" "}
           to get started.
         </div>
       ) : (
@@ -61,6 +67,7 @@ export default function RoomsCompleted({ rooms }: Props) {
 
 function RoomCompletedCard({ room }: { room: RoomCard }) {
   const [isHovered, setIsHovered] = useState(false);
+  const [, setLocation] = useLocation();
   const Icon = room.icon;
 
   return (
@@ -103,11 +110,14 @@ function RoomCompletedCard({ room }: { room: RoomCard }) {
         </div>
 
         <div className="pt-4 border-t border-border/50 flex items-center justify-end">
-          <Button asChild size="sm" variant="outline" className="gap-1 group/btn">
-            <Link href="/rooms">
-              Open
-              <ArrowRight className="w-3 h-3 group-hover/btn:translate-x-0.5 transition-transform" />
-            </Link>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1 group/btn"
+            onClick={() => setLocation("/rooms")}
+          >
+            Open
+            <ArrowRight className="w-3 h-3 group-hover/btn:translate-x-0.5 transition-transform" />
           </Button>
         </div>
       </div>

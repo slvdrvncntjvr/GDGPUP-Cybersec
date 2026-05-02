@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -55,13 +56,14 @@ export default function RoomCard({
   onJoin,
 }: RoomCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [, setLocation] = useLocation();
   const colors = teamColors[team];
 
   const handleJoin = () => {
     if (onJoin) {
       onJoin(id);
     } else {
-      console.log(`Joining room: ${title}`);
+      setLocation("/rooms");
     }
   };
 

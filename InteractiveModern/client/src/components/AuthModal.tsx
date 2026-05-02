@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -123,11 +124,11 @@ export default function AuthModal({
               <DialogTitle className="font-display text-2xl font-bold text-foreground">
                 {mode === "login" ? "Welcome back" : "Create your account"}
               </DialogTitle>
-              <p className="text-sm text-muted-foreground mt-1">
+              <DialogDescription className="text-sm text-muted-foreground mt-1">
                 {mode === "login"
                   ? "Log in to continue your security journey"
                   : "Join the cybersecurity community"}
-              </p>
+              </DialogDescription>
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="space-y-4">

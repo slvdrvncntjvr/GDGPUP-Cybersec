@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { openAuthModal } from "@/lib/openAuthModal";
 
 export default function CommunityHub() {
     const [teamHover, setTeamHover] = useState<'red' | 'blue' | null>(null);
@@ -201,6 +202,7 @@ export default function CommunityHub() {
                 
                 <Button 
                     size="lg" 
+                    onClick={() => openAuthModal('signup')}
                     className="relative overflow-hidden bg-gradient-to-r from-[hsl(var(--cyber-blue))] to-primary text-primary-foreground hover:scale-[1.03] px-16 py-12 rounded-2xl shadow-[0_0_40px_hsl(var(--primary)/0.4)] hover:shadow-[0_0_60px_hsl(var(--cyber-blue)/0.6)] transition-all duration-300 group border border-white/20 h-auto flex flex-col gap-3"
                 >
                     <div className="absolute inset-0 w-[200%] h-full bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>

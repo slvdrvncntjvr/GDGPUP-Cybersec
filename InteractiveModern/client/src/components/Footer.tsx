@@ -30,10 +30,10 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { icon: Github, href: "#", label: "GitHub" },
-  { icon: Twitter, href: "#", label: "Twitter" },
-  { icon: Linkedin, href: "#", label: "LinkedIn" },
-  { icon: Youtube, href: "#", label: "YouTube" },
+  { icon: Github, href: "https://github.com/slvdrvncntjvr/GDGPUP-Cybersec", label: "GitHub" },
+  { icon: Twitter, href: "https://x.com/googledevs", label: "Twitter" },
+  { icon: Linkedin, href: "https://www.linkedin.com/company/google-developers/", label: "LinkedIn" },
+  { icon: Youtube, href: "https://www.youtube.com/@GoogleDevelopers", label: "YouTube" },
 ];
 
 export default function Footer() {
@@ -71,6 +71,8 @@ export default function Footer() {
                   <a
                     key={social.label}
                     href={social.href}
+                    target="_blank"
+                    rel="noreferrer"
                     className="w-9 h-9 rounded-md bg-muted/50 hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                     aria-label={social.label}
                     data-testid={`social-${social.label.toLowerCase()}`}

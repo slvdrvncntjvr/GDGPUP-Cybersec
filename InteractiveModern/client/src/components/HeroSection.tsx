@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { openAuthModal } from "@/lib/openAuthModal";
 import Shield3D from "./Shield3D";
 
 export default function HeroSection() {
@@ -42,14 +43,13 @@ export default function HeroSection() {
               className="flex flex-wrap gap-3 opacity-0 animate-slide-up"
               style={{ animationDelay: "0.3s" }}
             >
-              <Link href="/signup">
-                <Button
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-6"
-                  data-testid="button-hero-start"
-                >
-                  Start Free
-                </Button>
-              </Link>
+              <Button
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6"
+                data-testid="button-hero-start"
+                onClick={() => openAuthModal("signup")}
+              >
+                Start Free
+              </Button>
               <Link href="/rooms">
                 <Button
                   variant="outline"
