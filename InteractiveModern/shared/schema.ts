@@ -74,6 +74,7 @@ export const registerSchema = z.object({
 export const loginSchema = z.object({
   username: z.string().email(),
   password: z.string().min(1),
+  rememberMe: z.boolean().optional().default(false),
 });
 
 export type InsertUser = z.infer<typeof registerSchema>;

@@ -8,6 +8,9 @@ import {
 import passport from "passport";
 import { hashPassword } from "./auth";
 
+const SESSION_7_DAYS_MS = 1000 * 60 * 60 * 24 * 7;
+const SESSION_30_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
+
 // Middleware: require an active session
 function requireAuth(req: any, res: any, next: any) {
   if (req.isAuthenticated()) return next();
@@ -64,6 +67,8 @@ export async function registerRoutes(
       });
     }
 
+    const { rememberMe } = parsed.data;
+
     passport.authenticate(
       "local",
       (err: any, user: any, info: any) => {
@@ -75,6 +80,9 @@ export async function registerRoutes(
         }
         req.login(user, (loginErr) => {
           if (loginErr) return next(loginErr);
+          req.session.cookie.maxAge = rememberMe
+            ? SESSION_30_DAYS_MS
+            : SESSION_7_DAYS_MS;
           return res.json(storage.toPublic(user));
         });
       }
