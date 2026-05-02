@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link } from "wouter";
 import {
   Shield,
   Crosshair,
@@ -192,12 +193,13 @@ function RoomCard({ room, team, delay }: RoomCardProps) {
       </div>
 
       <Button
+        asChild
         size="sm"
         variant={isBlue ? "default" : "destructive"}
         className="flex-shrink-0 text-xs h-8"
         data-testid={`button-join-${room.id}`}
       >
-        Join department
+        <Link href="/community">Join department</Link>
       </Button>
     </div>
   );

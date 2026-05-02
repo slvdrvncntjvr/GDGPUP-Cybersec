@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { openAuthModal } from "@/lib/openAuthModal";
 import { ArrowRight, Shield, Zap, Lock } from "lucide-react";
 
 export default function CTASection() {
@@ -25,16 +26,15 @@ export default function CTASection() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center opacity-0 animate-slide-up" style={{ animationDelay: "0.3s" }}>
-          <Link href="/signup">
-            <Button
-              size="lg"
-              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 gap-2 group"
-              data-testid="button-cta-start"
-            >
-              Get Started Free
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </Link>
+          <Button
+            size="lg"
+            className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 gap-2 group"
+            data-testid="button-cta-start"
+            onClick={() => openAuthModal("signup")}
+          >
+            Get Started Free
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Button>
           <Link href="/rooms">
             <Button
               variant="outline"

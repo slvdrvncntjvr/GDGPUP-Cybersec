@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Bell, LayoutGrid } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 type Props = {
   title?: string;
@@ -13,6 +14,20 @@ export default function DashboardHeader({
   subtitle = "Track your XP, completed rooms, and submissions.",
   onNotificationsClick,
 }: Props) {
+  const { toast } = useToast();
+
+  const handleNotificationsClick = () => {
+    if (onNotificationsClick) {
+      onNotificationsClick();
+      return;
+    }
+
+    toast({
+      title: "No notifications yet",
+      description: "We will show account and room updates here when available.",
+    });
+  };
+
   return (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
       <div>
@@ -22,7 +37,7 @@ export default function DashboardHeader({
 
       {/* Keep ONE primary rooms redirect on the page */}
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" className="gap-2" onClick={onNotificationsClick}>
+        <Button variant="outline" size="sm" className="gap-2" onClick={handleNotificationsClick}>
           <Bell className="h-4 w-4" />
           Notifications
         </Button>
