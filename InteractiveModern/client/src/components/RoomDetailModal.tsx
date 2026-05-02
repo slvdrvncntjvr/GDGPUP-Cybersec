@@ -1,4 +1,8 @@
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -7,6 +11,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -20,11 +25,10 @@ import {
   Play,
   ArrowRight,
   X,
+  Flag,
 } from "lucide-react";
 import red_logo from "./GDGCybersec-Assets/GDG-ascii-red-transparent.png";
 import blue_logo from "./GDGCybersec-Assets/GDG-ascii-blue-transparent.png";
-
-
 
 interface Challenge {
   id: string;
@@ -66,6 +70,29 @@ export default function RoomDetailModal({
   room,
 }: RoomDetailModalProps) {
   const [activeTab, setActiveTab] = useState<"overview" | "challenges">("overview");
+  const [flags, setFlags] = useState<Record<string, string>>({});
+  
+  const { isLoggedIn } = useAuth();
+  const { toast } = useToast();
+  const qc = useQueryClient();
+
+  const submitMut = useMutation({
+    mutationFn: async (data: { flag: string; challengeId: string; roomId: string; roomName: string; team: "blue" | "red" }) => {
+      const res = await apiRequest("POST", "/api/submissions", data);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      qc.invalidateQueries({ queryKey: ["/api/me"] });
+      
+      if (data.status === "Success") {
+        toast({ title: "Flag accepted! 🎉", description: "+50 XP awarded.", variant: "default" });
+      } else {
+        toast({ title: "Incorrect flag", description: "Keep trying!", variant: "destructive" });
+      }
+    },
+  });
+
   const Icon = room.icon;
   const completedChallenges = room.challenges.filter((c) => c.completed).length;
   const totalPoints = room.challenges.reduce((sum, c) => sum + c.points, 0);
@@ -73,13 +100,30 @@ export default function RoomDetailModal({
     .filter((c) => c.completed)
     .reduce((sum, c) => sum + c.points, 0);
 
-  const handleStartChallenge = (challengeId: string) => {
-    console.log(`Starting challenge: ${challengeId}`);
+  const handleSubmitFlag = (challengeId: string) => {
+    if (!isLoggedIn) {
+      toast({ title: "Please log in", description: "You must be logged in to submit flags.", variant: "destructive" });
+      return;
+    }
+    const flag = flags[challengeId] || "";
+    if (!flag.trim()) return;
+    
+    submitMut.mutate({
+      flag,
+      challengeId,
+      roomId: room.id,
+      roomName: room.title,
+      team: room.team,
+    });
+    
+    // clear input
+    setFlags(prev => ({ ...prev, [challengeId]: "" }));
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+
         <div
           className={cn(
             "relative h-32 flex items-end p-6",
@@ -292,18 +336,25 @@ export default function RoomDetailModal({
                       </div>
                     </div>
 
-                    {!challenge.completed && (
-                      <Button
-                        size="sm"
-                        variant={room.team === "blue" ? "default" : "destructive"}
-                        className="gap-1 flex-shrink-0"
-                        onClick={() => handleStartChallenge(challenge.id)}
-                        data-testid={`button-start-challenge-${challenge.id}`}
-                      >
-                        <Play className="w-3 h-3" />
-                        Start
-                      </Button>
-                    )}
+                      <div className="flex gap-2 items-center flex-shrink-0">
+                        <Input 
+                          placeholder="FLAG{...}" 
+                          className="h-8 text-xs w-32"
+                          value={flags[challenge.id] || ""}
+                          onChange={(e) => setFlags(prev => ({ ...prev, [challenge.id]: e.target.value }))}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSubmitFlag(challenge.id)}
+                        />
+                        <Button
+                          size="sm"
+                          variant={room.team === "blue" ? "default" : "destructive"}
+                          className="h-8 gap-1"
+                          onClick={() => handleSubmitFlag(challenge.id)}
+                          disabled={submitMut.isPending}
+                        >
+                          <Flag className="w-3 h-3" />
+                          Submit
+                        </Button>
+                      </div>
                   </div>
                 </div>
               ))}
@@ -327,16 +378,4 @@ export default function RoomDetailModal({
       </DialogContent>
     </Dialog>
   );
-  <style>{`
-      @keyframes glowPulse {
-        0%, 100% { filter: drop-shadow(0 0 20px rgba(59,130,246,0.6)); }
-        50%       { filter: drop-shadow(0 0 50px rgba(59,130,246,1)); }
-      }
-      @keyframes glowPulseRed {
-        0%, 100% { filter: drop-shadow(0 0 20px rgba(239,68,68,0.6)); }
-        50%       { filter: drop-shadow(0 0 50px rgba(239,68,68,1)); }
-      }
-      .glow-blue { animation: glowPulse 3s ease-in-out infinite; }
-      .glow-red  { animation: glowPulseRed 3s ease-in-out infinite; }
-    `}</style>
 }

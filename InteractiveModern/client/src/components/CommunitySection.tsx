@@ -58,7 +58,7 @@ export default function CommunitySection() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Link href="/join">
+              <Link href="/community">
                 <Button size="sm" className="gap-1.5" data-testid="button-join-department">
                   Join the department
                   <ArrowRight className="w-3.5 h-3.5" />

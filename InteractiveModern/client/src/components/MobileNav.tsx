@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Home, BookOpen, Target, Users, User } from "lucide-react";
+import { Home, BookOpen, Users, LayoutGrid } from "lucide-react";
 
 const navItems = [
   { icon: Home, label: "Home", href: "/" },
   { icon: BookOpen, label: "Rooms", href: "/rooms" },
-  { icon: Target, label: "Paths", href: "/paths" },
   { icon: Users, label: "Community", href: "/community" },
-  { icon: User, label: "Profile", href: "/profile" },
+  { icon: LayoutGrid, label: "Progress", href: "/dashboard" },
 ];
 
 export default function MobileNav() {
