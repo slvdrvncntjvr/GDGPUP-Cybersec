@@ -71,6 +71,7 @@ export default function RoomDetailModal({
 }: RoomDetailModalProps) {
   const [activeTab, setActiveTab] = useState<"overview" | "challenges">("overview");
   const [flags, setFlags] = useState<Record<string, string>>({});
+  const [pendingChallengeId, setPendingChallengeId] = useState<string | null>(null);
   
   const { isLoggedIn } = useAuth();
   const { toast } = useToast();
@@ -81,15 +82,29 @@ export default function RoomDetailModal({
       const res = await apiRequest("POST", "/api/submissions", data);
       return res.json();
     },
-    onSuccess: (data) => {
+    onMutate: (variables) => {
+      setPendingChallengeId(variables.challengeId);
+    },
+    onSuccess: (data, variables) => {
       qc.invalidateQueries({ queryKey: ["/api/dashboard"] });
       qc.invalidateQueries({ queryKey: ["/api/me"] });
+      setFlags((prev) => ({ ...prev, [variables.challengeId]: "" }));
       
       if (data.status === "Success") {
         toast({ title: "Flag accepted! 🎉", description: "+50 XP awarded.", variant: "default" });
       } else {
         toast({ title: "Incorrect flag", description: "Keep trying!", variant: "destructive" });
       }
+    },
+    onError: () => {
+      toast({
+        title: "Submission failed",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      setPendingChallengeId(null);
     },
   });
 
@@ -103,6 +118,7 @@ export default function RoomDetailModal({
   const handleSubmitFlag = (challengeId: string) => {
     if (!isLoggedIn) {
       toast({ title: "Please log in", description: "You must be logged in to submit flags.", variant: "destructive" });
+      window.dispatchEvent(new CustomEvent("gdg:auth-open", { detail: { mode: "login" } }));
       return;
     }
     const flag = flags[challengeId] || "";
@@ -116,8 +132,6 @@ export default function RoomDetailModal({
       team: room.team,
     });
     
-    // clear input
-    setFlags(prev => ({ ...prev, [challengeId]: "" }));
   };
 
   return (
@@ -349,10 +363,10 @@ export default function RoomDetailModal({
                           variant={room.team === "blue" ? "default" : "destructive"}
                           className="h-8 gap-1"
                           onClick={() => handleSubmitFlag(challenge.id)}
-                          disabled={submitMut.isPending}
+                          disabled={pendingChallengeId === challenge.id}
                         >
                           <Flag className="w-3 h-3" />
-                          Submit
+                          {pendingChallengeId === challenge.id ? "Submitting..." : "Submit"}
                         </Button>
                       </div>
                   </div>

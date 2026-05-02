@@ -24,7 +24,7 @@ export function useAuth() {
   });
 
   const loginMut = useMutation({
-    mutationFn: async (creds: { username: string; password: string }) => {
+    mutationFn: async (creds: { username: string; password: string; rememberMe?: boolean }) => {
       const res = await apiRequest("POST", "/api/login", creds);
       return res.json() as Promise<PublicUser>;
     },
@@ -73,5 +73,6 @@ export function useAuth() {
     isRegisterPending: registerMut.isPending,
 
     logout: logoutMut.mutateAsync,
+    isLogoutPending: logoutMut.isPending,
   };
 }

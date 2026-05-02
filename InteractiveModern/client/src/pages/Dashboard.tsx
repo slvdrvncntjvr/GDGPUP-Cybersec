@@ -13,11 +13,39 @@ import type { RoomCard, Submission, UserSummary } from "@/components/dashboard/t
 import { Button } from "@/components/ui/button";
 import { Shield, FileSearch, Network, Database, Lock, AlertTriangle, Cpu, Crosshair, Terminal, Eye } from "lucide-react";
 
+interface DashboardApiResponse {
+  user: {
+    id: string;
+    name: string;
+    team: "blue" | "red";
+    description: string;
+    xp: number;
+    xpGoal: number;
+    avatarUrl: string;
+  };
+  submissions: Array<{
+    id: string;
+    status: "Success" | "Fail";
+    roomId: string;
+    roomName: string;
+    team: "blue" | "red";
+  }>;
+}
+
 export default function Dashboard() {
   const [search, setSearch] = useState("");
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch, isFetching } = useQuery<DashboardApiResponse | null>({
     queryKey: ["/api/dashboard"],
+    queryFn: async () => {
+      const res = await fetch("/api/dashboard", { credentials: "include" });
+      if (res.status === 401) return null;
+      if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`${res.status}: ${text}`);
+      }
+      return res.json() as Promise<DashboardApiResponse>;
+    },
     retry: false,
   });
 
@@ -32,7 +60,27 @@ export default function Dashboard() {
     );
   }
 
-  if (error || !(data as any)?.user) {
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="pb-24 pt-20 md:pt-24 flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4 text-center">
+          <AlertTriangle className="w-16 h-16 text-amber-500 opacity-70" />
+          <h2 className="text-2xl font-bold">Dashboard Temporarily Unavailable</h2>
+          <p className="text-muted-foreground max-w-md">
+            We could not load your dashboard right now. Please try again in a few seconds.
+          </p>
+          <Button className="mt-2" onClick={() => refetch()} disabled={isFetching}>
+            {isFetching ? "Retrying..." : "Retry"}
+          </Button>
+        </main>
+        <Footer />
+        <MobileNav />
+      </div>
+    );
+  }
+
+  if (!data?.user) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
@@ -51,9 +99,8 @@ export default function Dashboard() {
   }
 
   // Format API user into UI format
-  const apiData = data as any;
-  const apiUser = apiData?.user;
-  const apiSubmissions = apiData?.submissions || [];
+  const apiUser = data.user;
+  const apiSubmissions = data.submissions || [];
 
   const user: UserSummary = {
     name: apiUser.name,

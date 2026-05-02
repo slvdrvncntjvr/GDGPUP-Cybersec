@@ -75,7 +75,11 @@ export default function AuthModal({
 
     try {
       if (mode === "login") {
-        await login({ username: formData.email, password: formData.password });
+        await login({
+          username: formData.email,
+          password: formData.password,
+          rememberMe: formData.rememberMe,
+        });
         toast({ title: "Welcome back! 🎉", description: "You are now logged in." });
       } else {
         await register({
@@ -183,6 +187,7 @@ export default function AuthModal({
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>

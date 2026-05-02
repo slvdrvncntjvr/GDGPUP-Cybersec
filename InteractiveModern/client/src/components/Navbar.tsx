@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 interface NavLink {
   label: string;
@@ -31,12 +32,27 @@ export default function Navbar() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
 
-  const { user, isLoggedIn, logout } = useAuth();
+  const { user, isLoggedIn, logout, isLogoutPending } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleOpenAuth = (event: Event) => {
+      const custom = event as CustomEvent<{ mode?: "login" | "signup" }>;
+      const mode = custom.detail?.mode === "signup" ? "signup" : "login";
+      setAuthMode(mode);
+      setAuthModalOpen(true);
+    };
+
+    window.addEventListener("gdg:auth-open", handleOpenAuth as EventListener);
+    return () => {
+      window.removeEventListener("gdg:auth-open", handleOpenAuth as EventListener);
+    };
   }, []);
 
   const openLogin = () => {
@@ -45,7 +61,16 @@ export default function Navbar() {
   };
 
   const handleLogout = async () => {
-    await logout();
+    try {
+      await logout();
+      toast({ title: "Logged out", description: "Your session has been ended." });
+    } catch {
+      toast({
+        title: "Logout failed",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const displayName = user?.name ?? "User";
@@ -162,7 +187,7 @@ export default function Navbar() {
 
                     <DropdownMenuItem className="gap-2 text-red-400 focus:text-red-400" onClick={handleLogout}>
                       <LogOut className="w-4 h-4" />
-                      Log Out
+                      {isLogoutPending ? "Logging Out..." : "Log Out"}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -259,9 +284,10 @@ export default function Navbar() {
                             setIsMobileOpen(false);
                             handleLogout();
                           }}
+                          disabled={isLogoutPending}
                         >
                           <LogOut className="w-4 h-4" />
-                          Log Out
+                          {isLogoutPending ? "Logging Out..." : "Log Out"}
                         </Button>
                       )}
                     </div>
