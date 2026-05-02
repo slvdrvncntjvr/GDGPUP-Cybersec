@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Shield, User, LayoutGrid, LogOut } from "lucide-react";
+import { Menu, Shield, LayoutGrid, LogOut } from "lucide-react";
 import AuthModal from "./AuthModal";
 import {
   DropdownMenu,
@@ -12,31 +12,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/hooks/useAuth";
 
 interface NavLink {
   label: string;
   href: string;
 }
 
-const navLinks: NavLink[] = [
+const baseNavLinks: NavLink[] = [
   { label: "Rooms", href: "/rooms" },
   { label: "Community Hub", href: "/community" },
 ];
-
-type StoredUser = {
-  name?: string;
-  avatarUrl?: string;
-};
-
-function getStoredUser(): StoredUser | null {
-  try {
-    const raw = localStorage.getItem("gdg_user");
-    if (!raw) return null;
-    return JSON.parse(raw) as StoredUser;
-  } catch {
-    return null;
-  }
-}
 
 export default function Navbar() {
   const [location] = useLocation();
@@ -44,7 +30,8 @@ export default function Navbar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
-  const [storedUser, setStoredUser] = useState<StoredUser | null>(null);
+
+  const { user, isLoggedIn, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -52,26 +39,16 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    setStoredUser(getStoredUser());
-    const onStorage = () => setStoredUser(getStoredUser());
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
-  const isLoggedIn = useMemo(() => !!storedUser, [storedUser]);
-
   const openLogin = () => {
     setAuthMode("login");
     setAuthModalOpen(true);
   };
 
-  const logout = () => {
-    localStorage.removeItem("gdg_user");
-    setStoredUser(null);
+  const handleLogout = async () => {
+    await logout();
   };
 
-  const displayName = storedUser?.name ?? "User";
+  const displayName = user?.name ?? "User";
   const initials =
     displayName
       .split(" ")
@@ -80,8 +57,13 @@ export default function Navbar() {
       .map((p) => p[0]?.toUpperCase())
       .join("") || "U";
 
+  const teamColor =
+    user?.team === "red"
+      ? "text-[hsl(var(--cyber-red))]"
+      : "text-[hsl(var(--cyber-blue))]";
+
   const desktopLinks: NavLink[] = useMemo(() => {
-    if (!isLoggedIn) return navLinks;
+    if (!isLoggedIn) return baseNavLinks;
     return [
       { label: "Rooms", href: "/rooms" },
       { label: "My Progress", href: "/dashboard" },
@@ -120,6 +102,7 @@ export default function Navbar() {
               </div>
             </Link>
 
+            {/* Desktop links */}
             <div className="hidden lg:flex items-center gap-1">
               {desktopLinks.map((link) => (
                 <Link key={link.label} href={link.href}>
@@ -149,15 +132,25 @@ export default function Navbar() {
                     >
                       <Avatar className="h-9 w-9">
                         <AvatarImage
-                          src={storedUser?.avatarUrl ?? ""}
+                          src={user?.avatarUrl ?? ""}
                           alt={displayName}
                         />
-                        <AvatarFallback>{initials}</AvatarFallback>
+                        <AvatarFallback className={teamColor}>
+                          {initials}
+                        </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
 
-                  <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuContent align="end" className="w-52">
+                    {/* User info header */}
+                    <div className="px-3 py-2 border-b border-border mb-1">
+                      <p className="text-sm font-semibold text-foreground truncate">{displayName}</p>
+                      <p className={`text-xs font-mono mt-0.5 ${teamColor}`}>
+                        {user?.team === "red" ? "🔴 Red Team" : "🔵 Blue Team"} · {user?.xp ?? 0} XP
+                      </p>
+                    </div>
+
                     <DropdownMenuItem asChild className="gap-2">
                       <Link href="/dashboard">
                         <LayoutGrid className="w-4 h-4" />
@@ -165,16 +158,9 @@ export default function Navbar() {
                       </Link>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem asChild className="gap-2">
-                      <Link href="/community">
-                        <User className="w-4 h-4" />
-                        Community Hub
-                      </Link>
-                    </DropdownMenuItem>
-
                     <DropdownMenuSeparator />
 
-                    <DropdownMenuItem className="gap-2" onClick={logout}>
+                    <DropdownMenuItem className="gap-2 text-red-400 focus:text-red-400" onClick={handleLogout}>
                       <LogOut className="w-4 h-4" />
                       Log Out
                     </DropdownMenuItem>
@@ -191,6 +177,7 @@ export default function Navbar() {
                 </Button>
               )}
 
+              {/* Mobile sheet */}
               <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
                 <SheetTrigger asChild className="lg:hidden">
                   <Button variant="ghost" size="icon" data-testid="button-mobile-menu">
@@ -207,13 +194,25 @@ export default function Navbar() {
                       <span className="font-display font-semibold">Cybersecurity GDG</span>
                     </div>
 
+                    {isLoggedIn && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-border">
+                        <Avatar className="h-9 w-9">
+                          <AvatarFallback className={teamColor}>{initials}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-semibold">{displayName}</p>
+                          <p className={`text-xs font-mono ${teamColor}`}>
+                            {user?.team === "red" ? "Red" : "Blue"} · {user?.xp} XP
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex flex-col gap-1">
                       <Link href="/rooms" onClick={() => setIsMobileOpen(false)}>
                         <Button
                           variant="ghost"
-                          className={`w-full justify-start ${
-                            location === "/rooms" ? "bg-accent" : ""
-                          }`}
+                          className={`w-full justify-start ${location === "/rooms" ? "bg-accent" : ""}`}
                         >
                           Rooms
                         </Button>
@@ -223,9 +222,7 @@ export default function Navbar() {
                         <Link href="/dashboard" onClick={() => setIsMobileOpen(false)}>
                           <Button
                             variant="ghost"
-                            className={`w-full justify-start gap-2 ${
-                              location === "/dashboard" ? "bg-accent" : ""
-                            }`}
+                            className={`w-full justify-start gap-2 ${location === "/dashboard" ? "bg-accent" : ""}`}
                           >
                             <LayoutGrid className="w-4 h-4" />
                             My Progress
@@ -236,9 +233,7 @@ export default function Navbar() {
                       <Link href="/community" onClick={() => setIsMobileOpen(false)}>
                         <Button
                           variant="ghost"
-                          className={`w-full justify-start ${
-                            location === "/community" ? "bg-accent" : ""
-                          }`}
+                          className={`w-full justify-start ${location === "/community" ? "bg-accent" : ""}`}
                         >
                           Community Hub
                         </Button>
@@ -259,10 +254,10 @@ export default function Navbar() {
                       ) : (
                         <Button
                           variant="outline"
-                          className="w-full justify-start gap-2"
+                          className="w-full justify-start gap-2 text-red-400 border-red-400/20 hover:text-red-400"
                           onClick={() => {
                             setIsMobileOpen(false);
-                            logout();
+                            handleLogout();
                           }}
                         >
                           <LogOut className="w-4 h-4" />

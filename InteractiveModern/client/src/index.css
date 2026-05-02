@@ -281,4 +281,16 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
+
+  /* Glow pulse animations for room modal header images */
+  @keyframes glowPulse {
+    0%, 100% { filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.6)); }
+    50%       { filter: drop-shadow(0 0 50px rgba(59, 130, 246, 1)); }
+  }
+  @keyframes glowPulseRed {
+    0%, 100% { filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.6)); }
+    50%       { filter: drop-shadow(0 0 50px rgba(239, 68, 68, 1)); }
+  }
+  .glow-blue { animation: glowPulse 3s ease-in-out infinite; }
+  .glow-red  { animation: glowPulseRed 3s ease-in-out infinite; }
 }

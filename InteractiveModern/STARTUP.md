@@ -31,18 +31,35 @@ npm install
 
 This will install all required packages (~472 packages).
 
-### 3. Configure Database (Optional)
+### 3. Configure Environment
 
-If you plan to use database features:
+Copy `.env.example` to `.env` and set values:
 
-1. Set up your database connection in `drizzle.config.ts`
+```bash
+# PowerShell
+Copy-Item .env.example .env
+```
+
+Minimum required values:
+
+- `SESSION_SECRET`: required in production; use a long random value
+- `PORT`: defaults to `5000`
+- `DATABASE_URL`: required for persistent storage
+
+### 4. Configure Database (Recommended)
+
+If you want persistent users/sessions/submissions:
+
+1. Set `DATABASE_URL` in `.env`
 2. Push the schema to your database:
 
 ```bash
 npm run db:push
 ```
 
-### 4. Run Development Server
+If `DATABASE_URL` is not set, the backend runs in in-memory mode (data resets on restart).
+
+### 5. Run Development Server
 
 ```bash
 npm run dev
@@ -53,7 +70,7 @@ This command:
 - Runs Vite dev server for hot module replacement
 - Serves the application on **http://localhost:5000**
 
-### 5. Access the Application
+### 6. Access the Application
 
 Open your browser and navigate to:
 
@@ -67,7 +84,7 @@ http://localhost:5000
 |---------|-------------|
 | `npm run dev` | Start development server (frontend + backend) |
 | `npm run build` | Build for production |
-| `npm start` | Run production build |
+| `npm start` | Run production build (cross-platform) |
 | `npm run check` | TypeScript type checking |
 | `npm run db:push` | Push database schema changes |
 
@@ -86,8 +103,14 @@ If port 5000 is already in use, you'll see an error. Either:
 
 ### Database Connection Issues
 
+- Ensure `DATABASE_URL` is set in `.env`
 - Ensure your database credentials are correctly configured in `drizzle.config.ts`
 - Verify your database server is running
+
+### Data Resets After Restart
+
+If registrations/submissions disappear after restart, check `DATABASE_URL`.
+Without it, backend intentionally runs in non-persistent in-memory mode.
 
 ### Build Errors
 
