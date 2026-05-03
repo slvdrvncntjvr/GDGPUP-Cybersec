@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -12,6 +12,7 @@ import SubmissionsTable from "@/components/dashboard/SubmissionsTable";
 import type { RoomCard, Submission, UserSummary } from "@/components/dashboard/types";
 import { Button } from "@/components/ui/button";
 import { Shield, FileSearch, Network, Database, Lock, AlertTriangle, Cpu, Crosshair, Terminal, Eye } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface DashboardApiResponse {
   user: {
@@ -34,12 +35,17 @@ interface DashboardApiResponse {
 
 export default function Dashboard() {
   const [search, setSearch] = useState("");
+  const qc = useQueryClient();
+  const { user: authUser, isLoading: isAuthLoading } = useAuth();
 
   const { data, isLoading, error, refetch, isFetching } = useQuery<DashboardApiResponse | null>({
     queryKey: ["/api/dashboard"],
     queryFn: async () => {
       const res = await fetch("/api/dashboard", { credentials: "include" });
-      if (res.status === 401) return null;
+      if (res.status === 401) {
+        qc.setQueryData(["/api/me"], null);
+        return null;
+      }
       if (!res.ok) {
         const text = (await res.text()) || res.statusText;
         throw new Error(`${res.status}: ${text}`);
@@ -47,9 +53,10 @@ export default function Dashboard() {
       return res.json() as Promise<DashboardApiResponse>;
     },
     retry: false,
+    enabled: !isAuthLoading,
   });
 
-  if (isLoading) {
+  if (isLoading || isAuthLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
@@ -80,7 +87,7 @@ export default function Dashboard() {
     );
   }
 
-  if (!data?.user) {
+  if (!authUser || !data?.user) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />

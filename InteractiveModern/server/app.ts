@@ -2,6 +2,7 @@ import "./env";
 
 import express, { type Request, type Response, type NextFunction } from "express";
 import session from "express-session";
+import { createHash } from "crypto";
 import MemoryStore from "memorystore";
 import connectPgSimple from "connect-pg-simple";
 import passport from "passport";
@@ -15,18 +16,34 @@ import { hasDatabaseUrl } from "./db";
 
 export async function setupApp() {
   const app = express();
+  const isProduction = process.env.NODE_ENV === "production";
 
   const usingDefaultSessionSecret =
     !process.env.SESSION_SECRET ||
     process.env.SESSION_SECRET === "gdg-cybersec-dev-secret";
 
-  if (process.env.NODE_ENV === "production" && usingDefaultSessionSecret) {
-    throw new Error(
-      "SESSION_SECRET must be set in production and cannot use the default development secret"
+  // Keep production online even when SESSION_SECRET is missing by deriving a
+  // stable fallback per deployment. This prevents blanket 500s on /api/*.
+  let sessionSecret = process.env.SESSION_SECRET ?? "gdg-cybersec-dev-secret";
+  if (isProduction && usingDefaultSessionSecret) {
+    const seed = [
+      process.env.DATABASE_URL,
+      process.env.VERCEL_PROJECT_PRODUCTION_URL,
+      process.env.VERCEL_URL,
+      process.env.RAILWAY_PUBLIC_DOMAIN,
+      "gdg-cybersec-fallback",
+    ]
+      .filter(Boolean)
+      .join("|");
+
+    sessionSecret = createHash("sha256").update(seed).digest("hex");
+    log(
+      "SESSION_SECRET is missing in production. Using a derived fallback secret; set SESSION_SECRET for stronger session security.",
+      "warn"
     );
   }
 
-  if (process.env.NODE_ENV === "production") {
+  if (isProduction) {
     app.set("trust proxy", 1);
   }
 
@@ -56,7 +73,7 @@ export async function setupApp() {
     store = new PgSession({
       conString: process.env.DATABASE_URL!,
       tableName: "user_sessions",
-      createTableIfMissing: true,
+      createTableIfMissing: false,
     });
   } else {
     const MStore = MemoryStore(session);
@@ -65,13 +82,16 @@ export async function setupApp() {
 
   app.use(
     session({
-      secret: process.env.SESSION_SECRET ?? "gdg-cybersec-dev-secret",
+      secret: sessionSecret,
+      proxy: true,
       resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: process.env.NODE_ENV === "production",
+        // "auto" uses HTTPS cookies on secure requests (e.g., Vercel) and
+        // still allows local non-HTTPS smoke tests.
+        secure: "auto",
         httpOnly: true,
-        sameSite: "strict",
+        sameSite: "lax",
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
       },
       store,

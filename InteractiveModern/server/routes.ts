@@ -11,6 +11,23 @@ import { hashPassword } from "./auth";
 const SESSION_7_DAYS_MS = 1000 * 60 * 60 * 24 * 7;
 const SESSION_30_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
 
+type AsyncHandler = (req: any, res: any, next: any) => Promise<unknown>;
+
+function withAsync(handler: AsyncHandler) {
+  return (req: any, res: any, next: any) => {
+    Promise.resolve(handler(req, res, next)).catch(next);
+  };
+}
+
+function saveSession(req: any): Promise<void> {
+  return new Promise((resolve, reject) => {
+    req.session.save((err: any) => {
+      if (err) return reject(err);
+      resolve();
+    });
+  });
+}
+
 // Middleware: require an active session
 function requireAuth(req: any, res: any, next: any) {
   if (req.isAuthenticated()) return next();
@@ -27,7 +44,7 @@ export async function registerRoutes(
 
   // ── POST /api/register ───────────────────────────────────────────────────
 
-  app.post("/api/register", async (req, res) => {
+  app.post("/api/register", withAsync(async (req, res) => {
     const parsed = registerSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({
@@ -51,15 +68,21 @@ export async function registerRoutes(
     const pub = storage.toPublic(user);
 
     // Log in immediately after registration
-    req.login(user, (err) => {
-      if (err) return res.status(500).json({ message: "Login after register failed" });
-      return res.status(201).json(pub);
+    await new Promise<void>((resolve, reject) => {
+      req.login(user, (err: any) => {
+        if (err) return reject(err);
+        resolve();
+      });
     });
-  });
+
+    await saveSession(req);
+
+    return res.status(201).json(pub);
+  }));
 
   // ── POST /api/login ──────────────────────────────────────────────────────
 
-  app.post("/api/login", (req, res, next) => {
+  app.post("/api/login", withAsync(async (req, res, next) => {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({
@@ -69,25 +92,31 @@ export async function registerRoutes(
 
     const { rememberMe } = parsed.data;
 
-    passport.authenticate(
-      "local",
-      (err: any, user: any, info: any) => {
-        if (err) return next(err);
-        if (!user) {
-          return res.status(401).json({
-            message: info?.message ?? "Invalid credentials",
-          });
-        }
-        req.login(user, (loginErr) => {
-          if (loginErr) return next(loginErr);
-          req.session.cookie.maxAge = rememberMe
-            ? SESSION_30_DAYS_MS
-            : SESSION_7_DAYS_MS;
-          return res.json(storage.toPublic(user));
-        });
-      }
-    )(req, res, next);
-  });
+    const authResult = await new Promise<{ user: any; info: any }>((resolve, reject) => {
+      passport.authenticate("local", (err: any, user: any, info: any) => {
+        if (err) return reject(err);
+        resolve({ user, info });
+      })(req, res, next);
+    });
+
+    if (!authResult.user) {
+      return res.status(401).json({
+        message: authResult.info?.message ?? "Invalid credentials",
+      });
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      req.login(authResult.user, (loginErr: any) => {
+        if (loginErr) return reject(loginErr);
+        resolve();
+      });
+    });
+
+    req.session.cookie.maxAge = rememberMe ? SESSION_30_DAYS_MS : SESSION_7_DAYS_MS;
+    await saveSession(req);
+
+    return res.json(storage.toPublic(authResult.user));
+  }));
 
   // ── POST /api/logout ─────────────────────────────────────────────────────
 
@@ -110,7 +139,7 @@ export async function registerRoutes(
 
   // ── GET /api/dashboard ───────────────────────────────────────────────────
 
-  app.get("/api/dashboard", requireAuth, async (req, res) => {
+  app.get("/api/dashboard", requireAuth, withAsync(async (req, res) => {
     const user = req.user as any;
     const freshUser = await storage.getUser(user.id);
     if (!freshUser) return res.status(404).json({ message: "User not found" });
@@ -120,11 +149,11 @@ export async function registerRoutes(
       user: storage.toPublic(freshUser),
       submissions,
     });
-  });
+  }));
 
   // ── POST /api/submissions ─────────────────────────────────────────────────
 
-  app.post("/api/submissions", requireAuth, async (req, res) => {
+  app.post("/api/submissions", requireAuth, withAsync(async (req, res) => {
     const parsed = submitFlagSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({
@@ -135,5 +164,5 @@ export async function registerRoutes(
     const user = req.user as any;
     const submission = await storage.createSubmission(user.id, parsed.data);
     return res.status(201).json(submission);
-  });
+  }));
 }

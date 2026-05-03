@@ -157,6 +157,19 @@ export class DatabaseStorage implements IStorage {
       create index if not exists submissions_user_submitted_at_idx
       on submissions (user_id, submitted_at);
     `);
+
+    await database.execute(sql`
+      create table if not exists user_sessions (
+        sid varchar not null collate "default" primary key,
+        sess json not null,
+        expire timestamp(6) not null
+      );
+    `);
+
+    await database.execute(sql`
+      create index if not exists "IDX_user_sessions_expire"
+      on user_sessions (expire);
+    `);
   }
 
   private toApiUser(user: DbUser): User {

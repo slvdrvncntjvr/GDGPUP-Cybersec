@@ -1,4 +1,4 @@
-import { setupApp } from "../server/app.js";
+import { setupApp } from "../server/app";
 
 // Cache the configured Express app across warm invocations of the same
 // serverless function instance (avoids re-running passport/session setup).
@@ -12,12 +12,12 @@ export default async function handler(req: any, res: any) {
   const app = await appReady;
   if (!app) {
     const message = startupError?.message ?? "Server initialization failed";
-    const stack = startupError?.stack;
+    const isProduction = process.env.NODE_ENV === "production";
 
-    res.status(500).json({
+    res.status(503).json({
       message: "Server startup failed",
       detail: message,
-      stack,
+      ...(isProduction ? {} : { stack: startupError?.stack }),
       checks: [
         "Ensure SESSION_SECRET is set in Vercel environment variables",
         "Ensure DATABASE_URL is set and valid",
