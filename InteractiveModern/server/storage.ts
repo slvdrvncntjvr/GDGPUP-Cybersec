@@ -288,4 +288,43 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage: IStorage = hasDatabaseUrl ? new DatabaseStorage() : new MemStorage();
+class AutoFallbackStorage implements IStorage {
+  private delegate: IStorage = hasDatabaseUrl ? new DatabaseStorage() : new MemStorage();
+
+  async init(): Promise<void> {
+    try {
+      await this.delegate.init();
+    } catch (err) {
+      // Keep API available in production even if the managed DB is temporarily unreachable.
+      console.warn("[storage] Database init failed, falling back to in-memory mode:", err);
+      this.delegate = new MemStorage();
+      await this.delegate.init();
+    }
+  }
+
+  getUser(id: string): Promise<User | undefined> {
+    return this.delegate.getUser(id);
+  }
+
+  getUserByUsername(username: string): Promise<User | undefined> {
+    return this.delegate.getUserByUsername(username);
+  }
+
+  createUser(data: InsertUser): Promise<User> {
+    return this.delegate.createUser(data);
+  }
+
+  toPublic(user: User): PublicUser {
+    return this.delegate.toPublic(user);
+  }
+
+  getSubmissionsByUser(userId: string): Promise<Submission[]> {
+    return this.delegate.getSubmissionsByUser(userId);
+  }
+
+  createSubmission(userId: string, data: InsertSubmission): Promise<Submission> {
+    return this.delegate.createSubmission(userId, data);
+  }
+}
+
+export const storage: IStorage = new AutoFallbackStorage();
