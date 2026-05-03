@@ -7,6 +7,7 @@ import {
 } from "@shared/schema";
 import passport from "passport";
 import { hashPassword } from "./auth";
+import { getChallengeMeta } from "./challenges";
 
 const SESSION_7_DAYS_MS = 1000 * 60 * 60 * 24 * 7;
 const SESSION_30_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
@@ -168,6 +169,15 @@ export async function registerRoutes(
     }
 
     const user = req.user as any;
+    const meta = getChallengeMeta(parsed.data.roomId, parsed.data.challengeId);
+    if (!meta) {
+      return res.status(400).json({ message: "Unknown challenge" });
+    }
+
+    if (user.team !== meta.team) {
+      return res.status(403).json({ message: "Challenge is not available for your team" });
+    }
+
     const submission = await storage.createSubmission(user.id, parsed.data);
     return res.status(201).json(submission);
   }));

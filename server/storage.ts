@@ -12,7 +12,7 @@ import type {
 import { submissions, users } from "@shared/schema";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db, hasDatabaseUrl } from "./db";
-import { verifyFlag } from "./challenges";
+import { getChallengeMeta, verifyFlag } from "./challenges";
 
 function requireDb() {
   if (!db) {
@@ -88,6 +88,19 @@ export class MemStorage implements IStorage {
     userId: string,
     data: InsertSubmission
   ): Promise<Submission> {
+    const meta = getChallengeMeta(data.roomId, data.challengeId);
+    if (!meta) {
+      throw new Error("Unknown challenge");
+    }
+
+    const existing = this.submissions.get(userId) ?? [];
+    const alreadySolved = existing.some(
+      (s) =>
+        s.status === "Success" &&
+        s.roomId === data.roomId &&
+        s.challengeId === data.challengeId
+    );
+
     const status: "Success" | "Fail" = verifyFlag(
       data.roomId,
       data.challengeId,
@@ -101,17 +114,17 @@ export class MemStorage implements IStorage {
       userId,
       flag: data.flag.trim(),
       status,
+      challengeId: data.challengeId,
       roomId: data.roomId,
-      roomName: data.roomName,
-      team: data.team,
+      roomName: meta.roomName,
+      team: meta.team,
       submittedAt: new Date().toISOString(),
     };
 
-    const existing = this.submissions.get(userId) ?? [];
     this.submissions.set(userId, [...existing, submission]);
 
-    // Award XP on success
-    if (status === "Success") {
+    // Award XP only for first successful solve of a challenge.
+    if (status === "Success" && !alreadySolved) {
       const user = this.users.get(userId);
       if (user) {
         this.users.set(userId, { ...user, xp: user.xp + 50 });
@@ -146,6 +159,7 @@ export class DatabaseStorage implements IStorage {
         user_id text not null references users(id) on delete cascade,
         flag text not null,
         status text not null,
+        challenge_id text not null,
         room_id text not null,
         room_name text not null,
         team text not null,
@@ -154,8 +168,18 @@ export class DatabaseStorage implements IStorage {
     `);
 
     await database.execute(sql`
+      alter table submissions
+      add column if not exists challenge_id text not null default '';
+    `);
+
+    await database.execute(sql`
       create index if not exists submissions_user_submitted_at_idx
       on submissions (user_id, submitted_at);
+    `);
+
+    await database.execute(sql`
+      create index if not exists submissions_user_room_challenge_idx
+      on submissions (user_id, room_id, challenge_id);
     `);
 
     await database.execute(sql`
@@ -192,6 +216,7 @@ export class DatabaseStorage implements IStorage {
       userId: submission.userId,
       flag: submission.flag,
       status: submission.status,
+      challengeId: submission.challengeId,
       roomId: submission.roomId,
       roomName: submission.roomName,
       team: submission.team,
@@ -256,6 +281,11 @@ export class DatabaseStorage implements IStorage {
     data: InsertSubmission
   ): Promise<Submission> {
     const database = requireDb();
+    const meta = getChallengeMeta(data.roomId, data.challengeId);
+    if (!meta) {
+      throw new Error("Unknown challenge");
+    }
+
     const status: "Success" | "Fail" = verifyFlag(
       data.roomId,
       data.challengeId,
@@ -264,6 +294,20 @@ export class DatabaseStorage implements IStorage {
       ? "Success"
       : "Fail";
 
+    const alreadySolvedRows = await database
+      .select({ id: submissions.id })
+      .from(submissions)
+      .where(
+        and(
+          eq(submissions.userId, userId),
+          eq(submissions.roomId, data.roomId),
+          eq(submissions.challengeId, data.challengeId),
+          eq(submissions.status, "Success")
+        )
+      )
+      .limit(1);
+    const alreadySolved = alreadySolvedRows.length > 0;
+
     const created = await database
       .insert(submissions)
       .values({
@@ -271,17 +315,18 @@ export class DatabaseStorage implements IStorage {
         userId,
         flag: data.flag.trim(),
         status,
+        challengeId: data.challengeId,
         roomId: data.roomId,
-        roomName: data.roomName,
-        team: data.team,
+        roomName: meta.roomName,
+        team: meta.team,
       })
       .returning();
 
-    if (status === "Success") {
+    if (status === "Success" && !alreadySolved) {
       await database
         .update(users)
         .set({ xp: sql`${users.xp} + 50` })
-        .where(and(eq(users.id, userId), eq(users.team, data.team as Team)));
+        .where(and(eq(users.id, userId), eq(users.team, meta.team as Team)));
     }
 
     return this.toApiSubmission(created[0]);

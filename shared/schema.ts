@@ -32,6 +32,7 @@ export const submissions = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     flag: text("flag").notNull(),
     status: text("status").$type<"Success" | "Fail">().notNull(),
+    challengeId: text("challenge_id").notNull(),
     roomId: text("room_id").notNull(),
     roomName: text("room_name").notNull(),
     team: text("team").$type<Team>().notNull(),
@@ -53,7 +54,7 @@ export type DbSubmission = typeof submissions.$inferSelect;
 export interface User {
   id: string;
   username: string;   // used as email as well
-  password: string;   // plain-text for now (hashed in production)
+  password: string;   // hashed using scrypt
   name: string;
   team: Team;
   xp: number;
@@ -86,6 +87,7 @@ export interface Submission {
   userId: string;
   flag: string;
   status: "Success" | "Fail";
+  challengeId: string;
   roomId: string;
   roomName: string;
   team: Team;
@@ -93,11 +95,9 @@ export interface Submission {
 }
 
 export const submitFlagSchema = z.object({
-  flag: z.string().min(1, "Flag cannot be empty"),
-  challengeId: z.string().min(1, "Challenge ID is required"),
-  roomId: z.string().min(1),
-  roomName: z.string().min(1),
-  team: z.enum(["blue", "red"]),
+  flag: z.string().trim().min(1, "Flag cannot be empty").max(256, "Flag is too long"),
+  challengeId: z.string().trim().min(1, "Challenge ID is required").max(64, "Challenge ID is too long"),
+  roomId: z.string().trim().min(1, "Room ID is required").max(64, "Room ID is too long"),
 });
 
 export type InsertSubmission = z.infer<typeof submitFlagSchema>;
