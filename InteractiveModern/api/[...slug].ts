@@ -1,4 +1,9 @@
-import { setupApp } from "../server/app.js";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+const { setupApp } = require("../server/app.cjs") as {
+  setupApp: () => Promise<any>;
+};
 
 // Cache the configured Express app across warm invocations of the same
 // serverless function instance (avoids re-running passport/session setup).
