@@ -43,7 +43,7 @@ export default function Dashboard() {
     queryFn: async () => {
       const res = await fetch("/api/dashboard", { credentials: "include" });
       if (res.status === 401) {
-        qc.setQueryData(["/api/me"], null);
+        await qc.invalidateQueries({ queryKey: ["/api/me"] });
         return null;
       }
       if (!res.ok) {
@@ -53,7 +53,7 @@ export default function Dashboard() {
       return res.json() as Promise<DashboardApiResponse>;
     },
     retry: false,
-    enabled: !isAuthLoading,
+    enabled: !isAuthLoading && !!authUser,
   });
 
   if (isLoading || isAuthLoading) {

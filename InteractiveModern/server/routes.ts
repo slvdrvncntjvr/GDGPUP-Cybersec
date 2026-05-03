@@ -123,7 +123,13 @@ export async function registerRoutes(
   app.post("/api/logout", (req, res) => {
     req.logout((err) => {
       if (err) return res.status(500).json({ message: "Logout failed" });
-      res.json({ message: "Logged out" });
+      req.session.destroy((destroyErr: any) => {
+        if (destroyErr) {
+          return res.status(500).json({ message: "Logout failed" });
+        }
+        res.clearCookie("connect.sid");
+        res.json({ message: "Logged out" });
+      });
     });
   });
 

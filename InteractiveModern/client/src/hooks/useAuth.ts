@@ -30,8 +30,10 @@ export function useAuth() {
       const res = await apiRequest("POST", "/api/login", creds);
       return res.json() as Promise<PublicUser>;
     },
-    onSuccess: (user) => {
-      qc.setQueryData(["/api/me"], user);
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["/api/me"] });
+      await qc.refetchQueries({ queryKey: ["/api/me"], exact: true });
+      await qc.invalidateQueries({ queryKey: ["/api/dashboard"] });
     },
   });
 
@@ -45,9 +47,10 @@ export function useAuth() {
       const res = await apiRequest("POST", "/api/register", data);
       return res.json() as Promise<PublicUser>;
     },
-    onSuccess: (user) => {
-      qc.setQueryData(["/api/me"], user);
-      qc.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["/api/me"] });
+      await qc.refetchQueries({ queryKey: ["/api/me"], exact: true });
+      await qc.invalidateQueries({ queryKey: ["/api/dashboard"] });
     },
   });
 
@@ -55,9 +58,10 @@ export function useAuth() {
     mutationFn: async () => {
       await apiRequest("POST", "/api/logout");
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       qc.setQueryData(["/api/me"], null);
-      qc.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      qc.removeQueries({ queryKey: ["/api/dashboard"] });
+      await qc.invalidateQueries({ queryKey: ["/api/me"] });
     },
   });
 
