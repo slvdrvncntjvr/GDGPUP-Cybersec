@@ -35,6 +35,8 @@ export interface IStorage {
   // Submissions
   getSubmissionsByUser(userId: string, limit?: number): Promise<Submission[]>;
   getSolvedChallengesByUser(userId: string): Promise<Array<{ roomId: string; challengeId: string }>>;
+  getLeaderboard(limit?: number): Promise<Array<{ id: string; name: string; team: Team; xp: number }>>;
+  getTeamProgress(): Promise<Array<{ team: Team; users: number; totalXp: number; solvedChallenges: number }>>;
   createSubmission(userId: string, data: InsertSubmission): Promise<Submission>;
 }
 
@@ -102,6 +104,42 @@ export class MemStorage implements IStorage {
     }
 
     return result;
+  }
+
+  async getLeaderboard(limit = 10): Promise<Array<{ id: string; name: string; team: Team; xp: number }>> {
+    return Array.from(this.users.values())
+      .sort((a, b) => b.xp - a.xp)
+      .slice(0, limit)
+      .map((user) => ({ id: user.id, name: user.name, team: user.team, xp: user.xp }));
+  }
+
+  async getTeamProgress(): Promise<Array<{ team: Team; users: number; totalXp: number; solvedChallenges: number }>> {
+    const teams: Team[] = ["blue", "red"];
+    const entries = Array.from(this.users.values());
+    const solvedByTeam = new Map<Team, Set<string>>([
+      ["blue", new Set<string>()],
+      ["red", new Set<string>()],
+    ]);
+
+    for (const [userId, userSubmissions] of Array.from(this.submissions.entries())) {
+      const user = this.users.get(userId);
+      if (!user) continue;
+      const solvedSet = solvedByTeam.get(user.team)!;
+      for (const submission of userSubmissions) {
+        if (submission.status !== "Success") continue;
+        solvedSet.add(`${submission.userId}:${submission.roomId}:${submission.challengeId}`);
+      }
+    }
+
+    return teams.map((team) => {
+      const users = entries.filter((entry) => entry.team === team);
+      return {
+        team,
+        users: users.length,
+        totalXp: users.reduce((sum, user) => sum + user.xp, 0),
+        solvedChallenges: solvedByTeam.get(team)?.size ?? 0,
+      };
+    });
   }
 
   async createSubmission(
@@ -319,6 +357,55 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
+  async getLeaderboard(limit = 10): Promise<Array<{ id: string; name: string; team: Team; xp: number }>> {
+    const database = requireDb();
+    const rows = await database
+      .select({ id: users.id, name: users.name, team: users.team, xp: users.xp })
+      .from(users)
+      .orderBy(desc(users.xp))
+      .limit(limit);
+
+    return rows;
+  }
+
+  async getTeamProgress(): Promise<Array<{ team: Team; users: number; totalXp: number; solvedChallenges: number }>> {
+    const database = requireDb();
+
+    const teamRows = await database
+      .select({
+        team: users.team,
+        users: sql<number>`count(*)`,
+        totalXp: sql<number>`coalesce(sum(${users.xp}), 0)`,
+      })
+      .from(users)
+      .groupBy(users.team);
+
+    const solvedRows = await database
+      .select({
+        team: submissions.team,
+        solvedChallenges: sql<number>`count(distinct (${submissions.userId} || ':' || ${submissions.roomId} || ':' || ${submissions.challengeId}))`,
+      })
+      .from(submissions)
+      .where(eq(submissions.status, "Success"))
+      .groupBy(submissions.team);
+
+    const solvedByTeam = new Map<Team, number>();
+    for (const row of solvedRows) {
+      solvedByTeam.set(row.team, Number(row.solvedChallenges) || 0);
+    }
+
+    const teams: Team[] = ["blue", "red"];
+    return teams.map((team) => {
+      const teamRow = teamRows.find((row) => row.team === team);
+      return {
+        team,
+        users: Number(teamRow?.users ?? 0),
+        totalXp: Number(teamRow?.totalXp ?? 0),
+        solvedChallenges: solvedByTeam.get(team) ?? 0,
+      };
+    });
+  }
+
   async createSubmission(
     userId: string,
     data: InsertSubmission
@@ -414,6 +501,14 @@ class AutoFallbackStorage implements IStorage {
     userId: string
   ): Promise<Array<{ roomId: string; challengeId: string }>> {
     return this.delegate.getSolvedChallengesByUser(userId);
+  }
+
+  getLeaderboard(limit?: number): Promise<Array<{ id: string; name: string; team: Team; xp: number }>> {
+    return this.delegate.getLeaderboard(limit);
+  }
+
+  getTeamProgress(): Promise<Array<{ team: Team; users: number; totalXp: number; solvedChallenges: number }>> {
+    return this.delegate.getTeamProgress();
   }
 
   createSubmission(userId: string, data: InsertSubmission): Promise<Submission> {

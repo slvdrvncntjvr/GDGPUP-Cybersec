@@ -25,6 +25,9 @@ jobs:
       - name: Type check
         run: npm run check
 
+      - name: Test
+        run: npm run test
+
       - name: Build serverless bundle
         run: npm run build:serverless
 

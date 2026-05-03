@@ -16,6 +16,9 @@ const SESSION_30_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
 const dashboardQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(100),
 });
+const leaderboardQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(50).default(10),
+});
 
 type AsyncHandler = (req: any, res: any, next: any) => Promise<unknown>;
 
@@ -177,6 +180,19 @@ export async function registerRoutes(
     const solved = await storage.getSolvedChallengesByUser(user.id);
     const solvedKeys = solved.map((entry) => `${entry.roomId}:${entry.challengeId}`);
     return res.json({ solvedKeys });
+  }));
+
+  // ── GET /api/progress/leaderboard ───────────────────────────────────────
+
+  app.get("/api/progress/leaderboard", withAsync(async (req, res) => {
+    const query = leaderboardQuerySchema.safeParse(req.query);
+    if (!query.success) {
+      return res.status(400).json({ message: "Invalid leaderboard query" });
+    }
+
+    const topUsers = await storage.getLeaderboard(query.data.limit);
+    const teams = await storage.getTeamProgress();
+    return res.json({ topUsers, teams });
   }));
 
   // ── GET /api/dashboard ───────────────────────────────────────────────────

@@ -31,6 +31,7 @@ export default function Navbar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const [authReturnTo, setAuthReturnTo] = useState<string | undefined>(undefined);
 
   const { user, isLoggedIn, logout, isLogoutPending } = useAuth();
   const { toast } = useToast();
@@ -43,9 +44,10 @@ export default function Navbar() {
 
   useEffect(() => {
     const handleOpenAuth = (event: Event) => {
-      const custom = event as CustomEvent<{ mode?: "login" | "signup" }>;
+      const custom = event as CustomEvent<{ mode?: "login" | "signup"; returnTo?: string }>;
       const mode = custom.detail?.mode === "signup" ? "signup" : "login";
       setAuthMode(mode);
+      setAuthReturnTo(custom.detail?.returnTo);
       setAuthModalOpen(true);
     };
 
@@ -57,6 +59,7 @@ export default function Navbar() {
 
   const openLogin = () => {
     setAuthMode("login");
+    setAuthReturnTo(undefined);
     setAuthModalOpen(true);
   };
 
@@ -299,7 +302,12 @@ export default function Navbar() {
         </nav>
       </header>
 
-      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} defaultMode={authMode} />
+      <AuthModal
+        open={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+        defaultMode={authMode}
+        returnTo={authReturnTo}
+      />
     </>
   );
 }

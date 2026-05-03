@@ -23,20 +23,24 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultMode?: "login" | "signup";
+  returnTo?: string;
 }
 
 export default function AuthModal({
   open,
   onOpenChange,
   defaultMode = "login",
+  returnTo,
 }: AuthModalProps) {
   const { login, register, isLoginPending, isRegisterPending } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const [mode, setMode] = useState<"login" | "signup">(defaultMode);
   const [showPassword, setShowPassword] = useState(false);
@@ -93,6 +97,11 @@ export default function AuthModal({
           title: "Account created! 🚀",
           description: `Welcome to GDG Cybersec, ${formData.name}!`,
         });
+      }
+
+      const target = returnTo && returnTo.startsWith("/") ? returnTo : undefined;
+      if (target) {
+        setLocation(target);
       }
       onOpenChange(false);
     } catch (err: any) {
