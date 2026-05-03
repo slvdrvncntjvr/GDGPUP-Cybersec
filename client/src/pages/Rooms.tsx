@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import MobileNav from "@/components/MobileNav";
@@ -49,6 +50,10 @@ interface Room {
   objectives?: string[];
   prerequisites?: string[];
   challenges: { id: string; title: string; description: string; completed: boolean; points: number }[];
+}
+
+interface RoomsProgressResponse {
+  solvedKeys: string[];
 }
 
 const allRooms: Room[] = [
@@ -252,8 +257,38 @@ export default function Rooms() {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
+  const { data: progressData } = useQuery<RoomsProgressResponse>({
+    queryKey: ["/api/rooms/progress"],
+    queryFn: async () => {
+      const res = await fetch("/api/rooms/progress", { credentials: "include" });
+      if (!res.ok) return { solvedKeys: [] };
+      return res.json() as Promise<RoomsProgressResponse>;
+    },
+    retry: false,
+  });
+
+  const roomsWithProgress = useMemo(() => {
+    const solved = new Set(progressData?.solvedKeys ?? []);
+    return allRooms.map((room) => {
+      const challenges = room.challenges.map((challenge) => ({
+        ...challenge,
+        completed: solved.has(`${room.id}:${challenge.id}`),
+      }));
+
+      const total = challenges.length;
+      const completed = challenges.filter((challenge) => challenge.completed).length;
+      const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+      return {
+        ...room,
+        challenges,
+        progress,
+      };
+    });
+  }, [progressData?.solvedKeys]);
+
   const filteredRooms = useMemo(() => {
-    return allRooms.filter((room) => {
+    return roomsWithProgress.filter((room) => {
       const matchesTeam = teamFilter === "all" || room.team === teamFilter;
       const matchesDifficulty = difficultyFilter === "all" || room.difficulty === difficultyFilter;
       const matchesSearch =
@@ -264,7 +299,7 @@ export default function Rooms() {
 
       return matchesTeam && matchesDifficulty && matchesSearch;
     });
-  }, [teamFilter, difficultyFilter, searchQuery]);
+  }, [roomsWithProgress, teamFilter, difficultyFilter, searchQuery]);
 
   const activeFilters = [
     teamFilter !== "all" && { key: "team", label: teamFilter === "blue" ? "Defense" : "Offense" },

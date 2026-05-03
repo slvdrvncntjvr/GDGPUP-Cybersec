@@ -34,6 +34,7 @@ export interface IStorage {
 
   // Submissions
   getSubmissionsByUser(userId: string): Promise<Submission[]>;
+  getSolvedChallengesByUser(userId: string): Promise<Array<{ roomId: string; challengeId: string }>>;
   createSubmission(userId: string, data: InsertSubmission): Promise<Submission>;
 }
 
@@ -82,6 +83,24 @@ export class MemStorage implements IStorage {
 
   async getSubmissionsByUser(userId: string): Promise<Submission[]> {
     return this.submissions.get(userId) ?? [];
+  }
+
+  async getSolvedChallengesByUser(
+    userId: string
+  ): Promise<Array<{ roomId: string; challengeId: string }>> {
+    const rows = this.submissions.get(userId) ?? [];
+    const solved = rows.filter((row) => row.status === "Success");
+    const seen = new Set<string>();
+    const result: Array<{ roomId: string; challengeId: string }> = [];
+
+    for (const row of solved) {
+      const key = `${row.roomId}:${row.challengeId}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      result.push({ roomId: row.roomId, challengeId: row.challengeId });
+    }
+
+    return result;
   }
 
   async createSubmission(
@@ -276,6 +295,28 @@ export class DatabaseStorage implements IStorage {
     return rows.map((row) => this.toApiSubmission(row));
   }
 
+  async getSolvedChallengesByUser(
+    userId: string
+  ): Promise<Array<{ roomId: string; challengeId: string }>> {
+    const database = requireDb();
+    const rows = await database
+      .select({ roomId: submissions.roomId, challengeId: submissions.challengeId })
+      .from(submissions)
+      .where(and(eq(submissions.userId, userId), eq(submissions.status, "Success")))
+      .orderBy(desc(submissions.submittedAt));
+
+    const seen = new Set<string>();
+    const result: Array<{ roomId: string; challengeId: string }> = [];
+    for (const row of rows) {
+      const key = `${row.roomId}:${row.challengeId}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      result.push({ roomId: row.roomId, challengeId: row.challengeId });
+    }
+
+    return result;
+  }
+
   async createSubmission(
     userId: string,
     data: InsertSubmission
@@ -365,6 +406,12 @@ class AutoFallbackStorage implements IStorage {
 
   getSubmissionsByUser(userId: string): Promise<Submission[]> {
     return this.delegate.getSubmissionsByUser(userId);
+  }
+
+  getSolvedChallengesByUser(
+    userId: string
+  ): Promise<Array<{ roomId: string; challengeId: string }>> {
+    return this.delegate.getSolvedChallengesByUser(userId);
   }
 
   createSubmission(userId: string, data: InsertSubmission): Promise<Submission> {

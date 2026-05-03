@@ -157,6 +157,19 @@ export async function registerRoutes(
     res.json(pub);
   });
 
+  // ── GET /api/rooms/progress ─────────────────────────────────────────────
+
+  app.get("/api/rooms/progress", withAsync(async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.json({ solvedKeys: [] as string[] });
+    }
+
+    const user = req.user as any;
+    const solved = await storage.getSolvedChallengesByUser(user.id);
+    const solvedKeys = solved.map((entry) => `${entry.roomId}:${entry.challengeId}`);
+    return res.json({ solvedKeys });
+  }));
+
   // ── GET /api/dashboard ───────────────────────────────────────────────────
 
   app.get("/api/dashboard", requireAuth, withAsync(async (req, res) => {

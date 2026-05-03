@@ -79,7 +79,7 @@ export default function RoomDetailModal({
   const qc = useQueryClient();
 
   const submitMut = useMutation({
-    mutationFn: async (data: { flag: string; challengeId: string; roomId: string; roomName: string; team: "blue" | "red" }) => {
+    mutationFn: async (data: { flag: string; challengeId: string; roomId: string }) => {
       const res = await apiRequest("POST", "/api/submissions", data);
       return res.json();
     },
@@ -129,8 +129,6 @@ export default function RoomDetailModal({
       flag,
       challengeId,
       roomId: room.id,
-      roomName: room.title,
-      team: room.team,
     });
     
   };
