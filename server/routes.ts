@@ -9,6 +9,7 @@ import { z } from "zod";
 import passport from "passport";
 import { hashPassword } from "./auth";
 import { getChallengeMeta } from "./challenges";
+import { ROOMS_CATALOG } from "@shared/challengeCatalog";
 
 const SESSION_7_DAYS_MS = 1000 * 60 * 60 * 24 * 7;
 const SESSION_30_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
@@ -54,6 +55,10 @@ export async function registerRoutes(
 
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok" });
+  });
+
+  app.get("/api/rooms/catalog", (_req, res) => {
+    res.json({ rooms: ROOMS_CATALOG });
   });
 
   // ── POST /api/register ───────────────────────────────────────────────────
