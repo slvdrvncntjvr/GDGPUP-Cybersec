@@ -5,12 +5,16 @@ import {
   loginSchema,
   submitFlagSchema,
 } from "@shared/schema";
+import { z } from "zod";
 import passport from "passport";
 import { hashPassword } from "./auth";
 import { getChallengeMeta } from "./challenges";
 
 const SESSION_7_DAYS_MS = 1000 * 60 * 60 * 24 * 7;
 const SESSION_30_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
+const dashboardQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(200).default(100),
+});
 
 type AsyncHandler = (req: any, res: any, next: any) => Promise<unknown>;
 
@@ -173,11 +177,16 @@ export async function registerRoutes(
   // ── GET /api/dashboard ───────────────────────────────────────────────────
 
   app.get("/api/dashboard", requireAuth, withAsync(async (req, res) => {
+    const query = dashboardQuerySchema.safeParse(req.query);
+    if (!query.success) {
+      return res.status(400).json({ message: "Invalid dashboard query" });
+    }
+
     const user = req.user as any;
     const freshUser = await storage.getUser(user.id);
     if (!freshUser) return res.status(404).json({ message: "User not found" });
 
-    const submissions = await storage.getSubmissionsByUser(freshUser.id);
+    const submissions = await storage.getSubmissionsByUser(freshUser.id, query.data.limit);
     return res.json({
       user: storage.toPublic(freshUser),
       submissions,
@@ -204,7 +213,13 @@ export async function registerRoutes(
       return res.status(403).json({ message: "Challenge is not available for your team" });
     }
 
+    const solvedBefore = await storage.getSolvedChallengesByUser(user.id);
+    const alreadySolved = solvedBefore.some(
+      (entry) => entry.roomId === parsed.data.roomId && entry.challengeId === parsed.data.challengeId
+    );
+
     const submission = await storage.createSubmission(user.id, parsed.data);
-    return res.status(201).json(submission);
+    const xpAwarded = submission.status === "Success" && !alreadySolved;
+    return res.status(201).json({ ...submission, xpAwarded });
   }));
 }

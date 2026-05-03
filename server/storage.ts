@@ -33,7 +33,7 @@ export interface IStorage {
   toPublic(user: User): PublicUser;
 
   // Submissions
-  getSubmissionsByUser(userId: string): Promise<Submission[]>;
+  getSubmissionsByUser(userId: string, limit?: number): Promise<Submission[]>;
   getSolvedChallengesByUser(userId: string): Promise<Array<{ roomId: string; challengeId: string }>>;
   createSubmission(userId: string, data: InsertSubmission): Promise<Submission>;
 }
@@ -81,8 +81,9 @@ export class MemStorage implements IStorage {
     return pub;
   }
 
-  async getSubmissionsByUser(userId: string): Promise<Submission[]> {
-    return this.submissions.get(userId) ?? [];
+  async getSubmissionsByUser(userId: string, limit = 100): Promise<Submission[]> {
+    const rows = this.submissions.get(userId) ?? [];
+    return rows.slice(-limit).reverse();
   }
 
   async getSolvedChallengesByUser(
@@ -285,13 +286,14 @@ export class DatabaseStorage implements IStorage {
     return pub;
   }
 
-  async getSubmissionsByUser(userId: string): Promise<Submission[]> {
+  async getSubmissionsByUser(userId: string, limit = 100): Promise<Submission[]> {
     const database = requireDb();
     const rows = await database
       .select()
       .from(submissions)
       .where(eq(submissions.userId, userId))
-      .orderBy(desc(submissions.submittedAt));
+      .orderBy(desc(submissions.submittedAt))
+      .limit(limit);
     return rows.map((row) => this.toApiSubmission(row));
   }
 
@@ -404,8 +406,8 @@ class AutoFallbackStorage implements IStorage {
     return this.delegate.toPublic(user);
   }
 
-  getSubmissionsByUser(userId: string): Promise<Submission[]> {
-    return this.delegate.getSubmissionsByUser(userId);
+  getSubmissionsByUser(userId: string, limit?: number): Promise<Submission[]> {
+    return this.delegate.getSubmissionsByUser(userId, limit);
   }
 
   getSolvedChallengesByUser(

@@ -32,6 +32,7 @@ import {
   Database,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
+import { ROOMS_CATALOG } from "@shared/challengeCatalog";
 
 type TeamFilter = "all" | "blue" | "red";
 type DifficultyFilter = "all" | "Beginner" | "Intermediate" | "Advanced";
@@ -56,199 +57,29 @@ interface RoomsProgressResponse {
   solvedKeys: string[];
 }
 
-const allRooms: Room[] = [
-  {
-    id: "siem-triage",
-    title: "SIEM Alert Triage",
-    description: "Investigate suspicious logins and lateral movement using a SIEM dashboard.",
-    icon: Shield,
-    difficulty: "Beginner",
-    duration: "45 min",
-    participants: 1234,
-    tags: ["Blue Team", "SIEM", "Log Analysis"],
-    team: "blue",
-    progress: 65,
-    objectives: ["Understand SIEM alert structure", "Correlate events across logs", "Prioritize incidents"],
-    challenges: [
-      { id: "ch-1", title: "Alert Classification", description: "Learn to classify alerts", completed: true, points: 50 },
-      { id: "ch-2", title: "Log Correlation", description: "Connect multiple log sources", completed: true, points: 100 },
-      { id: "ch-3", title: "Lateral Movement", description: "Detect attacker movement", completed: false, points: 150 },
-    ],
-  },
-  {
-    id: "windows-hunt",
-    title: "Windows Event Hunt",
-    description: "Pivot through Security, Sysmon, and PowerShell logs to detect malicious behavior.",
-    icon: FileSearch,
-    difficulty: "Intermediate",
-    duration: "60 min",
-    participants: 892,
-    tags: ["Blue Team", "Windows", "Threat Hunting"],
-    team: "blue",
-    objectives: ["Navigate Windows Event logs", "Use Sysmon for detection", "Identify PowerShell attacks"],
-    challenges: [
-      { id: "ch-1", title: "Event ID Basics", description: "Learn critical event IDs", completed: false, points: 75 },
-      { id: "ch-2", title: "Sysmon Analysis", description: "Process creation tracking", completed: false, points: 125 },
-    ],
-  },
-  {
-    id: "firewall-hardening",
-    title: "Firewall Hardening",
-    description: "Analyze traffic and apply rules to block brute-force and command & control.",
-    icon: Lock,
-    difficulty: "Beginner",
-    duration: "30 min",
-    participants: 756,
-    tags: ["Blue Team", "Network", "Hardening"],
-    team: "blue",
-    progress: 100,
-    challenges: [
-      { id: "ch-1", title: "Rule Basics", description: "Create firewall rules", completed: true, points: 50 },
-      { id: "ch-2", title: "Block C2", description: "Identify and block C2 traffic", completed: true, points: 100 },
-    ],
-  },
-  {
-    id: "incident-response",
-    title: "Incident Response Drill",
-    description: "Contain, eradicate, and recover in a simulated enterprise compromise.",
-    icon: AlertTriangle,
-    difficulty: "Advanced",
-    duration: "120 min",
-    participants: 445,
-    tags: ["Blue Team", "IR", "Playbooks"],
-    team: "blue",
-    challenges: [
-      { id: "ch-1", title: "Detection", description: "Identify the compromise", completed: false, points: 100 },
-      { id: "ch-2", title: "Containment", description: "Isolate affected systems", completed: false, points: 150 },
-      { id: "ch-3", title: "Eradication", description: "Remove the threat", completed: false, points: 150 },
-      { id: "ch-4", title: "Recovery", description: "Restore operations", completed: false, points: 100 },
-    ],
-  },
-  {
-    id: "memory-forensics",
-    title: "Memory Forensics",
-    description: "Analyze memory dumps to uncover hidden malware and attacker artifacts.",
-    icon: Cpu,
-    difficulty: "Advanced",
-    duration: "90 min",
-    participants: 312,
-    tags: ["Blue Team", "Forensics", "Malware"],
-    team: "blue",
-    challenges: [
-      { id: "ch-1", title: "Process Analysis", description: "Find suspicious processes", completed: false, points: 125 },
-      { id: "ch-2", title: "Injection Detection", description: "Identify code injection", completed: false, points: 175 },
-    ],
-  },
-  {
-    id: "web-sqli",
-    title: "Web Exploitation: SQLi",
-    description: "Identify injection points, exfiltrate data, and craft safe payloads.",
-    icon: Crosshair,
-    difficulty: "Intermediate",
-    duration: "60 min",
-    participants: 1567,
-    tags: ["Red Team", "Web", "SQLi"],
-    team: "red",
-    objectives: ["Find injection vulnerabilities", "Bypass filters", "Extract database contents"],
-    challenges: [
-      { id: "ch-1", title: "Basic SQLi", description: "Simple injection techniques", completed: false, points: 75 },
-      { id: "ch-2", title: "Blind SQLi", description: "Boolean and time-based attacks", completed: false, points: 150 },
-    ],
-  },
-  {
-    id: "linux-privesc",
-    title: "Linux Privilege Escalation",
-    description: "Enumerate misconfigs, exploit SUID binaries, and escalate to root.",
-    icon: Terminal,
-    difficulty: "Intermediate",
-    duration: "90 min",
-    participants: 1123,
-    tags: ["Red Team", "Linux", "Privesc"],
-    team: "red",
-    progress: 40,
-    challenges: [
-      { id: "ch-1", title: "Enumeration", description: "Find privilege escalation vectors", completed: true, points: 75 },
-      { id: "ch-2", title: "SUID Exploitation", description: "Abuse SUID binaries", completed: false, points: 125 },
-      { id: "ch-3", title: "Root Access", description: "Gain root privileges", completed: false, points: 150 },
-    ],
-  },
-  {
-    id: "osint-recon",
-    title: "OSINT Recon Challenge",
-    description: "Gather intel from public sources to map targets and discover exposures.",
-    icon: Eye,
-    difficulty: "Beginner",
-    duration: "45 min",
-    participants: 678,
-    tags: ["Red Team", "OSINT", "Recon"],
-    team: "red",
-    challenges: [
-      { id: "ch-1", title: "Domain Intel", description: "Enumerate subdomains and IPs", completed: false, points: 50 },
-      { id: "ch-2", title: "Employee OSINT", description: "Find employee information", completed: false, points: 75 },
-    ],
-  },
-  {
-    id: "ad-attack",
-    title: "AD Attack Path",
-    description: "Abuse weak ACLs to move laterally and dump credentials in a lab AD.",
-    icon: Network,
-    difficulty: "Advanced",
-    duration: "120 min",
-    participants: 334,
-    tags: ["Red Team", "Windows", "Active Directory"],
-    team: "red",
-    challenges: [
-      { id: "ch-1", title: "Bloodhound Mapping", description: "Map AD attack paths", completed: false, points: 100 },
-      { id: "ch-2", title: "Kerberoasting", description: "Extract service tickets", completed: false, points: 150 },
-      { id: "ch-3", title: "DCSync", description: "Dump domain credentials", completed: false, points: 200 },
-    ],
-  },
-  {
-    id: "xss-exploitation",
-    title: "XSS Exploitation",
-    description: "Find and exploit cross-site scripting vulnerabilities in web applications.",
-    icon: Crosshair,
-    difficulty: "Beginner",
-    duration: "45 min",
-    participants: 945,
-    tags: ["Red Team", "Web", "XSS"],
-    team: "red",
-    challenges: [
-      { id: "ch-1", title: "Reflected XSS", description: "Simple reflection attacks", completed: false, points: 50 },
-      { id: "ch-2", title: "Stored XSS", description: "Persistent script injection", completed: false, points: 100 },
-    ],
-  },
-  {
-    id: "api-exploitation",
-    title: "API Security Testing",
-    description: "Test REST APIs for authentication flaws, IDOR, and mass assignment.",
-    icon: Database,
-    difficulty: "Intermediate",
-    duration: "75 min",
-    participants: 567,
-    tags: ["Red Team", "API", "Web"],
-    team: "red",
-    challenges: [
-      { id: "ch-1", title: "Auth Bypass", description: "Find authentication weaknesses", completed: false, points: 100 },
-      { id: "ch-2", title: "IDOR Discovery", description: "Access unauthorized resources", completed: false, points: 125 },
-    ],
-  },
-  {
-    id: "log-analysis",
-    title: "Log Analysis Fundamentals",
-    description: "Learn to parse, analyze, and correlate logs from various sources.",
-    icon: FileSearch,
-    difficulty: "Beginner",
-    duration: "40 min",
-    participants: 1456,
-    tags: ["Blue Team", "Logs", "Analysis"],
-    team: "blue",
-    challenges: [
-      { id: "ch-1", title: "Log Parsing", description: "Extract key fields from logs", completed: false, points: 40 },
-      { id: "ch-2", title: "Pattern Recognition", description: "Identify anomalies", completed: false, points: 60 },
-    ],
-  },
-];
+const iconByRoomId: Record<string, LucideIcon> = {
+  "siem-triage": Shield,
+  "windows-hunt": FileSearch,
+  "firewall-hardening": Lock,
+  "incident-response": AlertTriangle,
+  "memory-forensics": Cpu,
+  "web-sqli": Crosshair,
+  "linux-privesc": Terminal,
+  "osint-recon": Eye,
+  "ad-attack": Network,
+  "xss-exploitation": Crosshair,
+  "api-exploitation": Database,
+  "log-analysis": FileSearch,
+};
+
+const allRooms: Room[] = ROOMS_CATALOG.map((room) => ({
+  ...room,
+  icon: iconByRoomId[room.id] ?? Shield,
+  challenges: room.challenges.map((challenge) => ({
+    ...challenge,
+    completed: false,
+  })),
+}));
 
 export default function Rooms() {
   const [teamFilter, setTeamFilter] = useState<TeamFilter>("all");

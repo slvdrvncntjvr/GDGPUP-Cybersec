@@ -1,5 +1,6 @@
 import { createHash } from "crypto";
 import type { Team } from "@shared/schema";
+import { CHALLENGE_META } from "@shared/challengeCatalog";
 
 function sha256(input: string): string {
   return createHash("sha256").update(input).digest("hex");
@@ -9,38 +10,6 @@ export interface ChallengeMeta {
   team: Team;
   roomName: string;
 }
-
-export const CHALLENGE_META: Record<string, ChallengeMeta> = {
-  "siem-triage:ch-1": { team: "blue", roomName: "SIEM Alert Triage" },
-  "siem-triage:ch-2": { team: "blue", roomName: "SIEM Alert Triage" },
-  "siem-triage:ch-3": { team: "blue", roomName: "SIEM Alert Triage" },
-  "windows-hunt:ch-1": { team: "blue", roomName: "Windows Event Hunt" },
-  "windows-hunt:ch-2": { team: "blue", roomName: "Windows Event Hunt" },
-  "firewall-hardening:ch-1": { team: "blue", roomName: "Firewall Hardening" },
-  "firewall-hardening:ch-2": { team: "blue", roomName: "Firewall Hardening" },
-  "incident-response:ch-1": { team: "blue", roomName: "Incident Response Drill" },
-  "incident-response:ch-2": { team: "blue", roomName: "Incident Response Drill" },
-  "incident-response:ch-3": { team: "blue", roomName: "Incident Response Drill" },
-  "incident-response:ch-4": { team: "blue", roomName: "Incident Response Drill" },
-  "memory-forensics:ch-1": { team: "blue", roomName: "Memory Forensics" },
-  "memory-forensics:ch-2": { team: "blue", roomName: "Memory Forensics" },
-  "web-sqli:ch-1": { team: "red", roomName: "Web Exploitation: SQLi" },
-  "web-sqli:ch-2": { team: "red", roomName: "Web Exploitation: SQLi" },
-  "linux-privesc:ch-1": { team: "red", roomName: "Linux Privilege Escalation" },
-  "linux-privesc:ch-2": { team: "red", roomName: "Linux Privilege Escalation" },
-  "linux-privesc:ch-3": { team: "red", roomName: "Linux Privilege Escalation" },
-  "osint-recon:ch-1": { team: "red", roomName: "OSINT Recon Challenge" },
-  "osint-recon:ch-2": { team: "red", roomName: "OSINT Recon Challenge" },
-  "ad-attack:ch-1": { team: "red", roomName: "AD Attack Path" },
-  "ad-attack:ch-2": { team: "red", roomName: "AD Attack Path" },
-  "ad-attack:ch-3": { team: "red", roomName: "AD Attack Path" },
-  "xss-exploitation:ch-1": { team: "red", roomName: "XSS Exploitation" },
-  "xss-exploitation:ch-2": { team: "red", roomName: "XSS Exploitation" },
-  "api-exploitation:ch-1": { team: "red", roomName: "API Security Testing" },
-  "api-exploitation:ch-2": { team: "red", roomName: "API Security Testing" },
-  "log-analysis:ch-1": { team: "blue", roomName: "Log Analysis Fundamentals" },
-  "log-analysis:ch-2": { team: "blue", roomName: "Log Analysis Fundamentals" },
-};
 
 export const CHALLENGE_FLAGS: Record<string, string> = {
   "siem-triage:ch-1": "8718c93bb92eb644bd34091dd9b8e5368ddf4a1e63d47ba2ec9344789edfcc8c",

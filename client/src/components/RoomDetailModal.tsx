@@ -4,6 +4,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { openAuthModal } from "@/lib/openAuthModal";
+import { solvedKey } from "@shared/challengeCatalog";
 import {
   Dialog,
   DialogContent,
@@ -89,10 +90,22 @@ export default function RoomDetailModal({
     onSuccess: (data, variables) => {
       qc.invalidateQueries({ queryKey: ["/api/dashboard"] });
       qc.invalidateQueries({ queryKey: ["/api/me"] });
+      qc.setQueryData<{ solvedKeys: string[] }>(["/api/rooms/progress"], (current) => {
+        const key = solvedKey(variables.roomId, variables.challengeId);
+        if (data.status !== "Success") return current ?? { solvedKeys: [] };
+        const existing = new Set(current?.solvedKeys ?? []);
+        existing.add(key);
+        return { solvedKeys: Array.from(existing) };
+      });
+      qc.invalidateQueries({ queryKey: ["/api/rooms/progress"] });
       setFlags((prev) => ({ ...prev, [variables.challengeId]: "" }));
       
       if (data.status === "Success") {
-        toast({ title: "Flag accepted! 🎉", description: "+50 XP awarded.", variant: "default" });
+        toast({
+          title: "Flag accepted! 🎉",
+          description: data.xpAwarded ? "+50 XP awarded." : "Already solved before; no extra XP this time.",
+          variant: "default",
+        });
       } else {
         toast({ title: "Incorrect flag", description: "Keep trying!", variant: "destructive" });
       }

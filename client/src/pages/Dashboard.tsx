@@ -13,6 +13,7 @@ import type { RoomCard, Submission, UserSummary } from "@/components/dashboard/t
 import { Button } from "@/components/ui/button";
 import { Shield, FileSearch, Network, Database, Lock, AlertTriangle, Cpu, Crosshair, Terminal, Eye } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { ROOM_BY_ID } from "@shared/challengeCatalog";
 
 interface DashboardApiResponse {
   user: {
@@ -41,7 +42,7 @@ export default function Dashboard() {
   const { data, isLoading, error, refetch, isFetching } = useQuery<DashboardApiResponse | null>({
     queryKey: ["/api/dashboard"],
     queryFn: async () => {
-      const res = await fetch("/api/dashboard", { credentials: "include" });
+      const res = await fetch("/api/dashboard?limit=100", { credentials: "include" });
       if (res.status === 401) {
         await qc.invalidateQueries({ queryKey: ["/api/me"] });
         return null;
@@ -141,7 +142,7 @@ export default function Dashboard() {
           name: sub.roomName,
           icon: iconMap[sub.roomName] || Shield,
           team: sub.team,
-          difficulty: "Intermediate", // Fallback, would normally come from room metadata
+          difficulty: ROOM_BY_ID.get(sub.roomId)?.difficulty ?? "Intermediate",
         });
       }
       return acc;
