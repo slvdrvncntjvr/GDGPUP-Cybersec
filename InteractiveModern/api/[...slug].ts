@@ -1,4 +1,4 @@
-import { setupApp } from "../server/app";
+import { setupApp } from "../server/app.js";
 
 // Cache the configured Express app across warm invocations of the same
 // serverless function instance (avoids re-running passport/session setup).
