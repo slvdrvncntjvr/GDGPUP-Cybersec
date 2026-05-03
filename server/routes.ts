@@ -29,6 +29,15 @@ function saveSession(req: any): Promise<void> {
   });
 }
 
+function regenerateSession(req: any): Promise<void> {
+  return new Promise((resolve, reject) => {
+    req.session.regenerate((err: any) => {
+      if (err) return reject(err);
+      resolve();
+    });
+  });
+}
+
 // Middleware: require an active session
 function requireAuth(req: any, res: any, next: any) {
   if (req.isAuthenticated()) return next();
@@ -68,6 +77,8 @@ export async function registerRoutes(
     });
     const pub = storage.toPublic(user);
 
+    await regenerateSession(req);
+
     // Log in immediately after registration
     await new Promise<void>((resolve, reject) => {
       req.login(user, (err: any) => {
@@ -105,6 +116,8 @@ export async function registerRoutes(
         message: authResult.info?.message ?? "Invalid credentials",
       });
     }
+
+    await regenerateSession(req);
 
     await new Promise<void>((resolve, reject) => {
       req.login(authResult.user, (loginErr: any) => {

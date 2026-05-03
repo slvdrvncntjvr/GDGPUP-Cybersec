@@ -161,10 +161,14 @@ export async function setupApp() {
   // ─── Error Handler ────────────────────────────────────────────────────────
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const isProductionRuntime = process.env.NODE_ENV === "production";
     const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    res.status(status).json({ message });
-    log(`request failed with ${status}: ${message}`, "error");
+    const rawMessage = err?.message || "Internal Server Error";
+    const safeMessage = status >= 500 && isProductionRuntime
+      ? "Internal Server Error"
+      : rawMessage;
+    res.status(status).json({ message: safeMessage });
+    log(`request failed with ${status}: ${rawMessage}`, "error");
   });
 
   return app;

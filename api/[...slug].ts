@@ -21,7 +21,7 @@ export default async function handler(req: any, res: any) {
 
     res.status(503).json({
       message: "Server startup failed",
-      detail: message,
+      detail: isProduction ? "Initialization error" : message,
       ...(isProduction ? {} : { stack: startupError?.stack }),
       checks: [
         "Ensure SESSION_SECRET is set in Vercel environment variables",
