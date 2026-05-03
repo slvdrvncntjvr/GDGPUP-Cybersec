@@ -20,7 +20,7 @@ This is a full-stack TypeScript application built with:
 ### 1. Navigate to Project Directory
 
 ```bash
-cd "c:\Users\Vincent\GDG Cybersec\InteractiveModern\InteractiveModern"
+cd "c:\Users\Vincent\GDG Cybersec\InteractiveModern"
 ```
 
 ### 2. Install Dependencies

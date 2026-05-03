@@ -26,7 +26,7 @@ export default async function handler(req: any, res: any) {
       checks: [
         "Ensure SESSION_SECRET is set in Vercel environment variables",
         "Ensure DATABASE_URL is set and valid",
-        "Verify Vercel project Root Directory points to InteractiveModern",
+        "Verify Vercel project Root Directory points to the repository root",
         "Redeploy after updating environment variables",
       ],
     });

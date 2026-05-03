@@ -31,7 +31,7 @@ A Render blueprint file is included at `render.yaml`.
 
 1. Push this folder to your GitHub repository.
 2. In Render, create a new Blueprint service from the repo.
-3. Set the service Root Directory to this app folder if your repo root is one level above it.
+3. Use the repository root as the service Root Directory.
 4. Confirm commands:
    - Build: `npm ci && npm run build`
    - Start: `npm start`

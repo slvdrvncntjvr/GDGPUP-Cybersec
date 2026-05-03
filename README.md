@@ -23,7 +23,7 @@ Follow these steps to set up and run the project locally.
 
 1.  Navigate to the project directory:
     ```bash
-    cd InteractiveModern/client
+    cd InteractiveModern
     ```
 
 2.  Install dependencies:
@@ -42,3 +42,13 @@ npm run dev
 **Verify the deployment:**
     Once the server starts, open your web browser and navigate to:
     > **http://localhost:5000**
+
+## Repository Layout
+
+This repository is now a single-app root layout:
+
+- `client/` - React frontend
+- `server/` - Express backend
+- `shared/` - shared schemas and types
+- `api/` - Vercel serverless entrypoint
+- `package.json` - root build and run scripts

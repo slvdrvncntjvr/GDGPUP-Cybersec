@@ -3,8 +3,10 @@
 This document records the integration work done locally for the `GDGPUP-Cybersec` repository, focused on consolidating open PR work safely into one branch.
 
 Date: 2026-03-13
-Workspace folder: `InteractiveModern/InteractiveModern`
+Workspace folder at the time: `InteractiveModern/InteractiveModern`
 Git remote: `https://github.com/slvdrvncntjvr/GDGPUP-Cybersec.git`
+
+Note: The repository has since been flattened, so current commands should be run from the repository root.
 
 ## Goal
 
@@ -107,7 +109,7 @@ Note:
 From this folder:
 
 ```powershell
-cd "C:\Users\Vincent\GDG Cybersec\InteractiveModern\InteractiveModern"
+cd "C:\Users\Vincent\GDG Cybersec\InteractiveModern"
 git fetch origin
 git switch integration/pr-234
 npm install
@@ -137,8 +139,8 @@ npm run dev -- --host
 
 ## Repo Root vs App Folder Note
 
-The Git repository root is one level above this folder (`InteractiveModern/`).
-This app lives in `InteractiveModern/InteractiveModern/`, so some git path outputs include `InteractiveModern/...` prefixes. This was handled during cherry-pick/integration by applying changes to the correct app path.
+At the time of this integration work, the app lived in `InteractiveModern/InteractiveModern/`.
+The repository has since been flattened to a single root app layout.
 
 ## Suggested Next Step
 
