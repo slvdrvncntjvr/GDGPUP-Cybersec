@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation, useRoute } from "wouter";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import MobileNav from "@/components/MobileNav";
@@ -85,8 +86,12 @@ export default function Rooms() {
   const [teamFilter, setTeamFilter] = useState<TeamFilter>("all");
   const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [, setLocation] = useLocation();
+  const [roomOnlyMatch, roomOnlyParams] = useRoute<{ roomId: string }>("/rooms/:roomId");
+  const [challengeMatch, challengeParams] = useRoute<{ roomId: string; challengeId: string }>(
+    "/rooms/:roomId/challenges/:challengeId"
+  );
 
   const { data: progressData } = useQuery<RoomsProgressResponse>({
     queryKey: ["/api/rooms/progress"],
@@ -117,6 +122,32 @@ export default function Rooms() {
       };
     });
   }, [progressData?.solvedKeys]);
+
+  const routeRoomId = challengeMatch
+    ? challengeParams.roomId
+    : roomOnlyMatch
+      ? roomOnlyParams.roomId
+      : null;
+  const routeChallengeId = challengeMatch ? challengeParams.challengeId : null;
+
+  const selectedRoom = useMemo(
+    () => (routeRoomId ? roomsWithProgress.find((room) => room.id === routeRoomId) ?? null : null),
+    [roomsWithProgress, routeRoomId]
+  );
+
+  useEffect(() => {
+    if (routeRoomId && !selectedRoom) {
+      setLocation("/rooms");
+    }
+  }, [routeRoomId, selectedRoom, setLocation]);
+
+  const openRoom = (roomId: string) => {
+    setLocation(`/rooms/${roomId}`);
+  };
+
+  const openRoomChallenge = (roomId: string, challengeId: string) => {
+    setLocation(`/rooms/${roomId}/challenges/${challengeId}`);
+  };
 
   const filteredRooms = useMemo(() => {
     return roomsWithProgress.filter((room) => {
@@ -285,11 +316,11 @@ export default function Rooms() {
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredRooms.map((room, index) => (
-                  <div key={room.id} onClick={() => setSelectedRoom(room)} className="cursor-pointer">
+                  <div key={room.id} onClick={() => openRoom(room.id)} className="cursor-pointer">
                     <RoomCard
                       {...room}
                       delay={0.03 * index}
-                      onJoin={() => setSelectedRoom(room)}
+                      onJoin={() => openRoom(room.id)}
                     />
                   </div>
                 ))}
@@ -302,7 +333,10 @@ export default function Rooms() {
       {selectedRoom && (
         <RoomDetailModal
           open={!!selectedRoom}
-          onOpenChange={(open) => !open && setSelectedRoom(null)}
+          onOpenChange={(open) => !open && setLocation("/rooms")}
+          initialTab={routeChallengeId ? "challenges" : "overview"}
+          initialChallengeId={routeChallengeId}
+          onNavigateChallenge={(challengeId) => openRoomChallenge(selectedRoom.id, challengeId)}
           room={selectedRoom}
         />
       )}

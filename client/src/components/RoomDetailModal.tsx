@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
@@ -43,6 +43,9 @@ interface Challenge {
 interface RoomDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialTab?: "overview" | "challenges";
+  initialChallengeId?: string | null;
+  onNavigateChallenge?: (challengeId: string) => void;
   room: {
     id: string;
     title: string;
@@ -69,6 +72,9 @@ const difficultyColors = {
 export default function RoomDetailModal({
   open,
   onOpenChange,
+  initialTab,
+  initialChallengeId,
+  onNavigateChallenge,
   room,
 }: RoomDetailModalProps) {
   const [activeTab, setActiveTab] = useState<"overview" | "challenges">("overview");
@@ -78,6 +84,13 @@ export default function RoomDetailModal({
   const { isLoggedIn } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!open) return;
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, open]);
 
   const submitMut = useMutation({
     mutationFn: async (data: { flag: string; challengeId: string; roomId: string }) => {
@@ -148,6 +161,11 @@ export default function RoomDetailModal({
 
   const handlePrimaryAction = () => {
     setActiveTab("challenges");
+    const nextChallenge = room.challenges.find((challenge) => !challenge.completed)?.id;
+    if (nextChallenge && onNavigateChallenge) {
+      onNavigateChallenge(nextChallenge);
+    }
+
     if (!isLoggedIn) {
       toast({
         title: "Create your account",
@@ -264,7 +282,13 @@ export default function RoomDetailModal({
               Overview
             </button>
             <button
-              onClick={() => setActiveTab("challenges")}
+              onClick={() => {
+                setActiveTab("challenges");
+                if (room.challenges.length > 0 && onNavigateChallenge) {
+                  const target = initialChallengeId ?? room.challenges[0].id;
+                  onNavigateChallenge(target);
+                }
+              }}
               className={cn(
                 "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
                 activeTab === "challenges"
@@ -331,6 +355,7 @@ export default function RoomDetailModal({
                   key={challenge.id}
                   className={cn(
                     "p-4 rounded-md border transition-colors",
+                    initialChallengeId === challenge.id && "ring-1 ring-primary/60",
                     challenge.completed
                       ? "bg-muted/30 border-border/50"
                       : "bg-card border-border hover:border-primary/30"

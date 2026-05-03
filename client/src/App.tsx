@@ -13,6 +13,8 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/rooms/:roomId/challenges/:challengeId" component={Rooms} />
+      <Route path="/rooms/:roomId" component={Rooms} />
       <Route path="/rooms" component={Rooms} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/community" component={CommunityHub} />
