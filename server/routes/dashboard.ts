@@ -1,23 +1,11 @@
 import type { Express } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
+import { withAsync, requireAuth } from "./middleware";
 
 const dashboardQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(100),
 });
-
-type AsyncHandler = (req: any, res: any, next: any) => Promise<unknown>;
-
-function withAsync(handler: AsyncHandler) {
-  return (req: any, res: any, next: any) => {
-    Promise.resolve(handler(req, res, next)).catch(next);
-  };
-}
-
-function requireAuth(req: any, res: any, next: any) {
-  if (req.isAuthenticated()) return next();
-  res.status(401).json({ message: "Not authenticated" });
-}
 
 export function registerDashboardRoutes(app: Express): void {
   // ── GET /api/dashboard ───────────────────────────────────────────────────

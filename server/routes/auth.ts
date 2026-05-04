@@ -3,17 +3,10 @@ import passport from "passport";
 import { storage } from "../storage";
 import { hashPassword } from "../auth";
 import { registerSchema, loginSchema } from "@shared/schema";
+import { withAsync } from "./middleware";
 
 const SESSION_7_DAYS_MS = 1000 * 60 * 60 * 24 * 7;
 const SESSION_30_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
-
-type AsyncHandler = (req: any, res: any, next: any) => Promise<unknown>;
-
-function withAsync(handler: AsyncHandler) {
-  return (req: any, res: any, next: any) => {
-    Promise.resolve(handler(req, res, next)).catch(next);
-  };
-}
 
 function saveSession(req: any): Promise<void> {
   return new Promise((resolve, reject) => {

@@ -2,19 +2,7 @@ import type { Express } from "express";
 import { storage } from "../storage";
 import { getChallengeMeta } from "../challenges";
 import { submitFlagSchema } from "@shared/schema";
-
-type AsyncHandler = (req: any, res: any, next: any) => Promise<unknown>;
-
-function withAsync(handler: AsyncHandler) {
-  return (req: any, res: any, next: any) => {
-    Promise.resolve(handler(req, res, next)).catch(next);
-  };
-}
-
-function requireAuth(req: any, res: any, next: any) {
-  if (req.isAuthenticated()) return next();
-  res.status(401).json({ message: "Not authenticated" });
-}
+import { withAsync, requireAuth } from "./middleware";
 
 export function registerSubmissionRoutes(app: Express): void {
   // ── POST /api/submissions ─────────────────────────────────────────────────

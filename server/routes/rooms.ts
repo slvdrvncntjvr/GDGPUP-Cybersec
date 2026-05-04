@@ -2,18 +2,11 @@ import type { Express } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
 import { ROOMS_CATALOG } from "@shared/challengeCatalog";
+import { withAsync } from "./middleware";
 
 const leaderboardQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(10),
 });
-
-type AsyncHandler = (req: any, res: any, next: any) => Promise<unknown>;
-
-function withAsync(handler: AsyncHandler) {
-  return (req: any, res: any, next: any) => {
-    Promise.resolve(handler(req, res, next)).catch(next);
-  };
-}
 
 export function registerRoomRoutes(app: Express): void {
   // ── GET /api/rooms/catalog ───────────────────────────────────────────────
