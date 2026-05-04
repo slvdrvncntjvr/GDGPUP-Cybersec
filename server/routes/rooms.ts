@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, RequestHandler } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
 import { ROOMS_CATALOG } from "@shared/challengeCatalog";
@@ -8,7 +8,7 @@ const leaderboardQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(10),
 });
 
-export function registerRoomRoutes(app: Express): void {
+export function registerRoomRoutes(app: Express, limiter: RequestHandler): void {
   // ── GET /api/rooms/catalog ───────────────────────────────────────────────
 
   app.get("/api/rooms/catalog", (_req, res) => {
@@ -17,7 +17,7 @@ export function registerRoomRoutes(app: Express): void {
 
   // ── GET /api/rooms/progress ─────────────────────────────────────────────
 
-  app.get("/api/rooms/progress", withAsync(async (req, res) => {
+  app.get("/api/rooms/progress", limiter, withAsync(async (req, res) => {
     if (!req.isAuthenticated() || !req.user) {
       return res.json({ solvedKeys: [] as string[] });
     }

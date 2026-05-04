@@ -73,17 +73,6 @@ export async function setupApp() {
   });
   app.use("/api/submissions", submissionsLimiter);
 
-  const generalApiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 300,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { message: "Too many requests, please try again later." },
-  });
-  app.use("/api/dashboard", generalApiLimiter);
-  app.use("/api/rooms/progress", generalApiLimiter);
-  app.use("/api/logout", generalApiLimiter);
-
   // ─── Session Store ─────────────────────────────────────────────────────────
   // Use Neon-backed Postgres sessions in production; in-memory in dev.
 

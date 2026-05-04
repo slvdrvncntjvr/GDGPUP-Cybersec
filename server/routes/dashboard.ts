@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, RequestHandler } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
 import { withAsync, requireAuth } from "./middleware";
@@ -7,10 +7,10 @@ const dashboardQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(100),
 });
 
-export function registerDashboardRoutes(app: Express): void {
+export function registerDashboardRoutes(app: Express, limiter: RequestHandler): void {
   // ── GET /api/dashboard ───────────────────────────────────────────────────
 
-  app.get("/api/dashboard", requireAuth, withAsync(async (req, res) => {
+  app.get("/api/dashboard", limiter, requireAuth, withAsync(async (req, res) => {
     const query = dashboardQuerySchema.safeParse(req.query);
     if (!query.success) {
       return res.status(400).json({ message: "Invalid dashboard query" });

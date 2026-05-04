@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, RequestHandler } from "express";
 import passport from "passport";
 import { storage } from "../storage";
 import { hashPassword } from "../auth";
@@ -26,7 +26,7 @@ function regenerateSession(req: any): Promise<void> {
   });
 }
 
-export function registerAuthRoutes(app: Express): void {
+export function registerAuthRoutes(app: Express, limiter: RequestHandler): void {
   // ── POST /api/register ───────────────────────────────────────────────────
 
   app.post("/api/register", withAsync(async (req, res) => {
@@ -41,7 +41,7 @@ export function registerAuthRoutes(app: Express): void {
 
     const existing = await storage.getUserByUsername(username);
     if (existing) {
-      return res.status(409).json({ message: "Email already registered" });
+      return res.status(409).json({ message: "Username already registered" });
     }
 
     const user = await storage.createUser({
@@ -108,7 +108,7 @@ export function registerAuthRoutes(app: Express): void {
 
   // ── POST /api/logout ─────────────────────────────────────────────────────
 
-  app.post("/api/logout", (req, res) => {
+  app.post("/api/logout", limiter, (req, res) => {
     req.logout((err) => {
       if (err) return res.status(500).json({ message: "Logout failed" });
       req.session.destroy((destroyErr: any) => {
