@@ -7,7 +7,6 @@ import MemoryStore from "memorystore";
 import connectPgSimple from "connect-pg-simple";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
 import { verifyPassword } from "./auth";
 import { log } from "./logger";
@@ -52,26 +51,8 @@ export async function setupApp() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
 
-  // ─── Rate Limiting (auth routes only) ─────────────────────────────────────
-
-  const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 20,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { message: "Too many attempts, please try again later." },
-  });
-  app.use("/api/login", authLimiter);
-  app.use("/api/register", authLimiter);
-
-  const submissionsLimiter = rateLimit({
-    windowMs: 5 * 60 * 1000, // 5 minutes
-    limit: 40,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { message: "Too many submissions, please slow down." },
-  });
-  app.use("/api/submissions", submissionsLimiter);
+  // ─── Rate Limiting ────────────────────────────────────────────────────────
+  // Fine-grained limiters are applied inline in each route registrar (routes.ts).
 
   // ─── Session Store ─────────────────────────────────────────────────────────
   // Use Neon-backed Postgres sessions in production; in-memory in dev.

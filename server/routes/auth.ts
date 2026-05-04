@@ -26,10 +26,10 @@ function regenerateSession(req: any): Promise<void> {
   });
 }
 
-export function registerAuthRoutes(app: Express, limiter: RequestHandler): void {
+export function registerAuthRoutes(app: Express, authLimiter: RequestHandler, generalLimiter: RequestHandler): void {
   // ── POST /api/register ───────────────────────────────────────────────────
 
-  app.post("/api/register", withAsync(async (req, res) => {
+  app.post("/api/register", authLimiter, withAsync(async (req, res) => {
     const parsed = registerSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({
@@ -68,7 +68,7 @@ export function registerAuthRoutes(app: Express, limiter: RequestHandler): void 
 
   // ── POST /api/login ──────────────────────────────────────────────────────
 
-  app.post("/api/login", withAsync(async (req, res, next) => {
+  app.post("/api/login", authLimiter, withAsync(async (req, res, next) => {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({
@@ -108,7 +108,7 @@ export function registerAuthRoutes(app: Express, limiter: RequestHandler): void 
 
   // ── POST /api/logout ─────────────────────────────────────────────────────
 
-  app.post("/api/logout", limiter, (req, res) => {
+  app.post("/api/logout", generalLimiter, (req, res) => {
     req.logout((err) => {
       if (err) return res.status(500).json({ message: "Logout failed" });
       req.session.destroy((destroyErr: any) => {
@@ -123,7 +123,7 @@ export function registerAuthRoutes(app: Express, limiter: RequestHandler): void 
 
   // ── GET /api/me ──────────────────────────────────────────────────────────
 
-  app.get("/api/me", (req, res) => {
+  app.get("/api/me", generalLimiter, (req, res) => {
     if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }

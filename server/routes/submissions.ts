@@ -1,13 +1,13 @@
-import type { Express } from "express";
+import type { Express, RequestHandler } from "express";
 import { storage } from "../storage";
 import { getChallengeMeta } from "../challenges";
 import { submitFlagSchema } from "@shared/schema";
 import { withAsync, requireAuth } from "./middleware";
 
-export function registerSubmissionRoutes(app: Express): void {
+export function registerSubmissionRoutes(app: Express, submissionsLimiter: RequestHandler, generalLimiter: RequestHandler): void {
   // ── POST /api/submissions ─────────────────────────────────────────────────
 
-  app.post("/api/submissions", requireAuth, withAsync(async (req, res) => {
+  app.post("/api/submissions", submissionsLimiter, requireAuth, withAsync(async (req, res) => {
     const parsed = submitFlagSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({
@@ -37,7 +37,7 @@ export function registerSubmissionRoutes(app: Express): void {
 
   // ── GET /api/submissions ──────────────────────────────────────────────────
 
-  app.get("/api/submissions", requireAuth, withAsync(async (req, res) => {
+  app.get("/api/submissions", generalLimiter, requireAuth, withAsync(async (req, res) => {
     const user = req.user as any;
     const submissions = await storage.getSubmissionsByUser(user.id);
     return res.json({ submissions });
