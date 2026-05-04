@@ -48,6 +48,33 @@ export const submissions = pgTable(
   })
 );
 
+export const userChallengeSolves = pgTable(
+  "user_challenge_solves",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    roomId: text("room_id").notNull(),
+    challengeId: text("challenge_id").notNull(),
+    team: text("team").$type<Team>().notNull(),
+    solvedAt: timestamp("solved_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    byUserRoomChallenge: index("user_challenge_solves_unique_idx").on(
+      table.userId,
+      table.roomId,
+      table.challengeId
+    ),
+    byTeamSolvedAt: index("user_challenge_solves_team_solved_at_idx").on(
+      table.team,
+      table.solvedAt
+    ),
+  })
+);
+
 export type DbUser = typeof users.$inferSelect;
 export type DbSubmission = typeof submissions.$inferSelect;
 
@@ -92,6 +119,7 @@ export interface Submission {
   roomName: string;
   team: Team;
   submittedAt: string; // ISO string
+  xpAwarded?: boolean;
 }
 
 export const submitFlagSchema = z.object({

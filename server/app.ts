@@ -2,7 +2,6 @@ import "./env";
 
 import express, { type Request, type Response, type NextFunction } from "express";
 import session from "express-session";
-import { createHash } from "crypto";
 import MemoryStore from "memorystore";
 import connectPgSimple from "connect-pg-simple";
 import passport from "passport";
@@ -17,31 +16,18 @@ import { hasDatabaseUrl } from "./db";
 export async function setupApp() {
   const app = express();
   const isProduction = process.env.NODE_ENV === "production";
+  const configuredSessionSecret = process.env.SESSION_SECRET;
 
-  const usingDefaultSessionSecret =
-    !process.env.SESSION_SECRET ||
-    process.env.SESSION_SECRET === "gdg-cybersec-dev-secret";
-
-  // Keep production online even when SESSION_SECRET is missing by deriving a
-  // stable fallback per deployment. This prevents blanket 500s on /api/*.
-  let sessionSecret = process.env.SESSION_SECRET ?? "gdg-cybersec-dev-secret";
-  if (isProduction && usingDefaultSessionSecret) {
-    const seed = [
-      process.env.DATABASE_URL,
-      process.env.VERCEL_PROJECT_PRODUCTION_URL,
-      process.env.VERCEL_URL,
-      process.env.RAILWAY_PUBLIC_DOMAIN,
-      "gdg-cybersec-fallback",
-    ]
-      .filter(Boolean)
-      .join("|");
-
-    sessionSecret = createHash("sha256").update(seed).digest("hex");
-    log(
-      "SESSION_SECRET is missing in production. Using a derived fallback secret; set SESSION_SECRET for stronger session security.",
-      "warn"
+  if (
+    isProduction &&
+    (!configuredSessionSecret || configuredSessionSecret === "gdg-cybersec-dev-secret")
+  ) {
+    throw new Error(
+      "SESSION_SECRET must be set to a strong unique value in production"
     );
   }
+
+  const sessionSecret = configuredSessionSecret ?? "gdg-cybersec-dev-secret";
 
   if (isProduction) {
     app.set("trust proxy", 1);

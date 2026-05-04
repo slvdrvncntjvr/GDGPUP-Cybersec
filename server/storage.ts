@@ -9,10 +9,11 @@ import type {
   DbUser,
   DbSubmission,
 } from "@shared/schema";
-import { submissions, users } from "@shared/schema";
+import { submissions, users, userChallengeSolves } from "@shared/schema";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db, hasDatabaseUrl } from "./db";
 import { getChallengeMeta, verifyFlag } from "./challenges";
+import { createHash } from "crypto";
 
 function requireDb() {
   if (!db) {
@@ -40,11 +41,17 @@ export interface IStorage {
   createSubmission(userId: string, data: InsertSubmission): Promise<Submission>;
 }
 
+function hashSubmittedFlag(flag: string): string {
+  const normalized = flag.trim();
+  return `sha256:${createHash("sha256").update(normalized).digest("hex")}`;
+}
+
 // ─── In-Memory Implementation ────────────────────────────────────────────────
 
 export class MemStorage implements IStorage {
   private users: Map<string, User> = new Map();
   private submissions: Map<string, Submission[]> = new Map();
+  private solvedChallenges: Set<string> = new Set();
 
   async init(): Promise<void> {
     return;
@@ -152,12 +159,8 @@ export class MemStorage implements IStorage {
     }
 
     const existing = this.submissions.get(userId) ?? [];
-    const alreadySolved = existing.some(
-      (s) =>
-        s.status === "Success" &&
-        s.roomId === data.roomId &&
-        s.challengeId === data.challengeId
-    );
+    const solvedKey = `${userId}:${data.roomId}:${data.challengeId}`;
+    const alreadySolved = this.solvedChallenges.has(solvedKey);
 
     const status: "Success" | "Fail" = verifyFlag(
       data.roomId,
@@ -170,22 +173,25 @@ export class MemStorage implements IStorage {
     const submission: Submission = {
       id: randomUUID(),
       userId,
-      flag: data.flag.trim(),
+      flag: hashSubmittedFlag(data.flag),
       status,
       challengeId: data.challengeId,
       roomId: data.roomId,
       roomName: meta.roomName,
       team: meta.team,
       submittedAt: new Date().toISOString(),
+      xpAwarded: false,
     };
 
     this.submissions.set(userId, [...existing, submission]);
 
     // Award XP only for first successful solve of a challenge.
     if (status === "Success" && !alreadySolved) {
+      this.solvedChallenges.add(solvedKey);
       const user = this.users.get(userId);
       if (user) {
         this.users.set(userId, { ...user, xp: user.xp + 50 });
+        submission.xpAwarded = true;
       }
     }
 
@@ -226,6 +232,17 @@ export class DatabaseStorage implements IStorage {
     `);
 
     await database.execute(sql`
+      create table if not exists user_challenge_solves (
+        id text primary key,
+        user_id text not null references users(id) on delete cascade,
+        room_id text not null,
+        challenge_id text not null,
+        team text not null,
+        solved_at timestamptz not null default now()
+      );
+    `);
+
+    await database.execute(sql`
       alter table submissions
       add column if not exists challenge_id text not null default '';
     `);
@@ -238,6 +255,16 @@ export class DatabaseStorage implements IStorage {
     await database.execute(sql`
       create index if not exists submissions_user_room_challenge_idx
       on submissions (user_id, room_id, challenge_id);
+    `);
+
+    await database.execute(sql`
+      create unique index if not exists user_challenge_solves_unique_idx
+      on user_challenge_solves (user_id, room_id, challenge_id);
+    `);
+
+    await database.execute(sql`
+      create index if not exists user_challenge_solves_team_solved_at_idx
+      on user_challenge_solves (team, solved_at);
     `);
 
     await database.execute(sql`
@@ -340,21 +367,12 @@ export class DatabaseStorage implements IStorage {
   ): Promise<Array<{ roomId: string; challengeId: string }>> {
     const database = requireDb();
     const rows = await database
-      .select({ roomId: submissions.roomId, challengeId: submissions.challengeId })
-      .from(submissions)
-      .where(and(eq(submissions.userId, userId), eq(submissions.status, "Success")))
-      .orderBy(desc(submissions.submittedAt));
+      .select({ roomId: userChallengeSolves.roomId, challengeId: userChallengeSolves.challengeId })
+      .from(userChallengeSolves)
+      .where(eq(userChallengeSolves.userId, userId))
+      .orderBy(desc(userChallengeSolves.solvedAt));
 
-    const seen = new Set<string>();
-    const result: Array<{ roomId: string; challengeId: string }> = [];
-    for (const row of rows) {
-      const key = `${row.roomId}:${row.challengeId}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      result.push({ roomId: row.roomId, challengeId: row.challengeId });
-    }
-
-    return result;
+    return rows;
   }
 
   async getLeaderboard(limit = 10): Promise<Array<{ id: string; name: string; team: Team; xp: number }>> {
@@ -382,12 +400,11 @@ export class DatabaseStorage implements IStorage {
 
     const solvedRows = await database
       .select({
-        team: submissions.team,
-        solvedChallenges: sql<number>`count(distinct (${submissions.userId} || ':' || ${submissions.roomId} || ':' || ${submissions.challengeId}))`,
+        team: userChallengeSolves.team,
+        solvedChallenges: sql<number>`count(*)`,
       })
-      .from(submissions)
-      .where(eq(submissions.status, "Success"))
-      .groupBy(submissions.team);
+      .from(userChallengeSolves)
+      .groupBy(userChallengeSolves.team);
 
     const solvedByTeam = new Map<Team, number>();
     for (const row of solvedRows) {
@@ -424,53 +441,74 @@ export class DatabaseStorage implements IStorage {
       ? "Success"
       : "Fail";
 
-    const alreadySolvedRows = await database
-      .select({ id: submissions.id })
-      .from(submissions)
-      .where(
-        and(
-          eq(submissions.userId, userId),
-          eq(submissions.roomId, data.roomId),
-          eq(submissions.challengeId, data.challengeId),
-          eq(submissions.status, "Success")
-        )
-      )
-      .limit(1);
-    const alreadySolved = alreadySolvedRows.length > 0;
+    return await database.transaction(async (tx) => {
+      const created = await tx
+        .insert(submissions)
+        .values({
+          id: randomUUID(),
+          userId,
+          flag: hashSubmittedFlag(data.flag),
+          status,
+          challengeId: data.challengeId,
+          roomId: data.roomId,
+          roomName: meta.roomName,
+          team: meta.team,
+        })
+        .returning();
 
-    const created = await database
-      .insert(submissions)
-      .values({
-        id: randomUUID(),
-        userId,
-        flag: data.flag.trim(),
-        status,
-        challengeId: data.challengeId,
-        roomId: data.roomId,
-        roomName: meta.roomName,
-        team: meta.team,
-      })
-      .returning();
+      let xpAwarded = false;
+      if (status === "Success") {
+        const solveInsert = await tx
+          .insert(userChallengeSolves)
+          .values({
+            id: randomUUID(),
+            userId,
+            roomId: data.roomId,
+            challengeId: data.challengeId,
+            team: meta.team,
+          })
+          .onConflictDoNothing({
+            target: [
+              userChallengeSolves.userId,
+              userChallengeSolves.roomId,
+              userChallengeSolves.challengeId,
+            ],
+          })
+          .returning({ id: userChallengeSolves.id });
 
-    if (status === "Success" && !alreadySolved) {
-      await database
-        .update(users)
-        .set({ xp: sql`${users.xp} + 50` })
-        .where(and(eq(users.id, userId), eq(users.team, meta.team as Team)));
-    }
+        if (solveInsert.length > 0) {
+          await tx
+            .update(users)
+            .set({ xp: sql`${users.xp} + 50` })
+            .where(and(eq(users.id, userId), eq(users.team, meta.team as Team)));
+          xpAwarded = true;
+        }
+      }
 
-    return this.toApiSubmission(created[0]);
+      return { ...this.toApiSubmission(created[0]), xpAwarded };
+    });
   }
 }
 
 class AutoFallbackStorage implements IStorage {
   private delegate: IStorage = hasDatabaseUrl ? new DatabaseStorage() : new MemStorage();
+  private readonly isProduction = process.env.NODE_ENV === "production";
+  private readonly allowEphemeralMode = process.env.ALLOW_EPHEMERAL_MODE === "true";
 
   async init(): Promise<void> {
+    if (this.isProduction && !hasDatabaseUrl && !this.allowEphemeralMode) {
+      throw new Error(
+        "DATABASE_URL is required in production. Set ALLOW_EPHEMERAL_MODE=true to explicitly allow in-memory fallback."
+      );
+    }
+
     try {
       await this.delegate.init();
     } catch (err) {
-      // Keep API available in production even if the managed DB is temporarily unreachable.
+      if (this.isProduction && !this.allowEphemeralMode) {
+        throw err;
+      }
+
       console.warn("[storage] Database init failed, falling back to in-memory mode:", err);
       this.delegate = new MemStorage();
       await this.delegate.init();

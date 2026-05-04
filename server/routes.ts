@@ -234,13 +234,8 @@ export async function registerRoutes(
       return res.status(403).json({ message: "Challenge is not available for your team" });
     }
 
-    const solvedBefore = await storage.getSolvedChallengesByUser(user.id);
-    const alreadySolved = solvedBefore.some(
-      (entry) => entry.roomId === parsed.data.roomId && entry.challengeId === parsed.data.challengeId
-    );
-
     const submission = await storage.createSubmission(user.id, parsed.data);
-    const xpAwarded = submission.status === "Success" && !alreadySolved;
+    const xpAwarded = submission.xpAwarded === true;
     return res.status(201).json({ ...submission, xpAwarded });
   }));
 }
