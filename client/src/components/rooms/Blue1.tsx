@@ -1,70 +1,129 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Shield, Trophy, Info, BookOpen, CheckCircle2, Terminal } from "lucide-react";
+import RoomLab, { Bullets, InlineCode, PayloadBlock } from "./RoomLab";
+import type { RoomBodyProps, RoomLessonMap } from "./types";
 
-export default function Blue1({ onExit }: { onExit: () => void }) {
-  const [flag, setFlag] = useState("");
+const BLUE_1_LESSONS: RoomLessonMap = {
+  "ch-1": {
+    objective:
+      "Enable a host firewall so only the ports the system needs are reachable.",
+    background: (
+      <p>
+        A default Linux install often listens on more ports than the workload
+        actually needs. Turning on a firewall and explicitly allowing only the
+        required services is the cheapest meaningful improvement to a host's
+        attack surface.
+      </p>
+    ),
+    steps: [
+      {
+        title: "Inventory listeners",
+        body: <PayloadBlock>{`ss -tulpn`}</PayloadBlock>,
+      },
+      {
+        title: "Enable UFW with a deny-by-default policy",
+        body: (
+          <PayloadBlock>{`sudo ufw default deny incoming\nsudo ufw default allow outgoing\nsudo ufw allow OpenSSH\nsudo ufw enable\nsudo ufw status verbose`}</PayloadBlock>
+        ),
+      },
+      {
+        title: "Capture the flag",
+        body: (
+          <p>
+            Submit <InlineCode>{`NEXUS{HOST_FIREWALL_<TEAM_ID>}`}</InlineCode> when
+            UFW is active and only the expected ports are open.
+          </p>
+        ),
+      },
+    ],
+    verification: [
+      "UFW (or equivalent) is active",
+      "Only required ports are reachable",
+      "A connection attempt to a denied port times out",
+    ],
+  },
+  "ch-2": {
+    objective:
+      "Disable at least three unnecessary services on the lab VM.",
+    background: (
+      <p>
+        Every running service is potential attack surface. Defaults often
+        include print servers, Avahi, Bluetooth, etc. — none of which a
+        server host needs.
+      </p>
+    ),
+    steps: [
+      {
+        title: "List enabled units",
+        body: (
+          <PayloadBlock>{`systemctl list-unit-files --state=enabled\nsystemctl list-units --type=service --state=running`}</PayloadBlock>
+        ),
+      },
+      {
+        title: "Stop and disable",
+        body: (
+          <PayloadBlock>{`sudo systemctl disable --now cups\nsudo systemctl disable --now avahi-daemon\nsudo systemctl disable --now bluetooth`}</PayloadBlock>
+        ),
+      },
+      {
+        title: "Capture the flag",
+        body: (
+          <p>
+            Submit <InlineCode>{`NEXUS{SERVICES_HARDENED_<TEAM_ID>}`}</InlineCode>{" "}
+            once at least three services have been disabled and the VM still
+            boots cleanly.
+          </p>
+        ),
+      },
+    ],
+    verification: [
+      "At least three services disabled",
+      "Justification documented for each removal",
+      "VM still reaches a stable state on reboot",
+    ],
+  },
+  "ch-3": {
+    objective:
+      "Apply a sensible password / lockout policy and verify enforcement.",
+    background: (
+      <p>
+        Weak password defaults are still the #1 cause of intrusions in lab
+        environments. PAM lets you set length, complexity, and lockout in one
+        place.
+      </p>
+    ),
+    steps: [
+      {
+        title: "Configure PAM password requirements",
+        body: (
+          <PayloadBlock>{`sudo nano /etc/security/pwquality.conf\n# minlen = 12\n# minclass = 3\n# difok = 4`}</PayloadBlock>
+        ),
+      },
+      {
+        title: "Lock out brute force",
+        body: (
+          <PayloadBlock>{`sudo nano /etc/security/faillock.conf\n# deny = 5\n# unlock_time = 900`}</PayloadBlock>
+        ),
+      },
+      {
+        title: "Capture the flag",
+        body: (
+          <Bullets
+            items={[
+              <>Force a password change for a test user.</>,
+              <>Try a password that violates the new rule and confirm rejection.</>,
+              <>Submit <InlineCode>{`NEXUS{PASSWORD_POLICY_<TEAM_ID>}`}</InlineCode>.</>,
+            ]}
+          />
+        ),
+      },
+    ],
+    verification: [
+      "Password complexity policy active",
+      "Lockout policy active",
+      "Test account confirms enforcement",
+    ],
+  },
+};
 
-  return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-300">
-      {/* Header - BLUE ACCENTS */}
-      <div className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex justify-between shrink-0">
-        <div className="flex gap-3 items-center">
-          <Shield className="text-blue-500" />
-          <div>
-            <h2 className="text-xl font-bold text-white">BLUE-1: SIEM Alert Triage</h2>
-            <span className="text-xs text-blue-400 font-mono">Placeholder</span>
-          </div>
-        </div>
-        <Button variant="outline" size="sm" onClick={onExit} className="border-slate-700 text-slate-400 hover:bg-slate-800">Exit</Button>
-      </div>
-
-      <div className="flex flex-col md:flex-row flex-1 min-h-0">
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          
-          {/* Overview */}
-          <section className="bg-slate-900 p-6 rounded-xl border border-slate-800">
-            <h3 className="font-bold text-white mb-2 flex gap-2"><Info className="text-blue-500"/> Overview</h3>
-            <p className="text-sm leading-relaxed text-slate-400">Analyze logs to identify and classify suspicious authentication events.</p>
-          </section>
-
-          {/* Background */}
-          <section className="bg-slate-900 p-6 rounded-xl border border-slate-800">
-            <h3 className="font-bold text-white mb-2 flex gap-2"><BookOpen className="text-blue-500"/> Background</h3>
-            <p className="text-sm text-slate-500 italic">Content pending...</p>
-          </section>
-
-          {/* Instructions */}
-          <section className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-            <h3 className="font-bold text-white mb-4 flex gap-2"><Terminal className="text-blue-500"/> Detailed Instructions</h3>
-            <div className="p-8 text-center border-2 border-dashed border-slate-800 rounded-lg">
-               <Shield className="w-12 h-12 text-slate-700 mx-auto mb-3" />
-               <p className="text-slate-500 font-medium">Lab Environment Construction in Progress</p>
-            </div>
-          </section>
-
-          {/* Verification */}
-          <section className="bg-blue-900/10 border border-blue-900/30 rounded-xl p-6">
-             <h3 className="font-bold text-blue-400 mb-2 flex gap-2"><CheckCircle2 className="text-blue-500"/> Verification Checklist</h3>
-             <ul className="space-y-1 text-sm text-slate-500 italic">
-               <li>[Pending verification steps]</li>
-             </ul>
-          </section>
-          <div className="h-10"></div>
-        </div>
-
-        <div className="w-full md:w-80 bg-slate-900 border-l border-slate-800 p-6 overflow-y-auto">
-           <div className="bg-black p-4 rounded-xl text-center border border-slate-800 mb-6">
-             <Trophy className="w-6 h-6 text-blue-500 mx-auto mb-2"/>
-             <h3 className="font-bold text-white">Submission</h3>
-           </div>
-           <div className="text-center text-slate-500 text-xs mt-10">
-             Submissions unavailable.
-           </div>
-        </div>
-      </div>
-    </div>
-  );
+export default function Blue1Body(props: RoomBodyProps) {
+  return <RoomLab {...props} lessons={BLUE_1_LESSONS} />;
 }

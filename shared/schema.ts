@@ -5,23 +5,31 @@ import {
   integer,
   timestamp,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 // ─── Users ───────────────────────────────────────────────────────────────────
 
 export type Team = "blue" | "red";
 
-export const users = pgTable("users", {
-  id: text("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  name: text("name").notNull(),
-  team: text("team").$type<Team>().notNull().default("blue"),
-  xp: integer("xp").notNull().default(0),
-  xpGoal: integer("xp_goal").notNull().default(500),
-  description: text("description").notNull().default(""),
-  avatarUrl: text("avatar_url").notNull().default(""),
-});
+export const users = pgTable(
+  "users",
+  {
+    id: text("id").primaryKey(),
+    username: text("username").notNull().unique(),
+    password: text("password").notNull(),
+    name: text("name").notNull(),
+    team: text("team").$type<Team>().notNull().default("blue"),
+    teamId: text("team_id").notNull(),
+    xp: integer("xp").notNull().default(0),
+    xpGoal: integer("xp_goal").notNull().default(500),
+    description: text("description").notNull().default(""),
+    avatarUrl: text("avatar_url").notNull().default(""),
+  },
+  (table) => ({
+    teamIdUnique: uniqueIndex("users_team_id_unique").on(table.teamId),
+  })
+);
 
 export const submissions = pgTable(
   "submissions",
@@ -30,7 +38,7 @@ export const submissions = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    flag: text("flag").notNull(),
+    flagHash: text("flag_hash").notNull(),
     status: text("status").$type<"Success" | "Fail">().notNull(),
     challengeId: text("challenge_id").notNull(),
     roomId: text("room_id").notNull(),
@@ -53,10 +61,11 @@ export type DbSubmission = typeof submissions.$inferSelect;
 
 export interface User {
   id: string;
-  username: string;   // used as email as well
-  password: string;   // hashed using scrypt
+  username: string; // also used as the email
+  password: string; // scrypt-hashed
   name: string;
   team: Team;
+  teamId: string; // e.g. "TEAM01"
   xp: number;
   xpGoal: number;
   description: string;
@@ -85,7 +94,6 @@ export type InsertUser = z.infer<typeof registerSchema>;
 export interface Submission {
   id: string;
   userId: string;
-  flag: string;
   status: "Success" | "Fail";
   challengeId: string;
   roomId: string;
@@ -95,9 +103,21 @@ export interface Submission {
 }
 
 export const submitFlagSchema = z.object({
-  flag: z.string().trim().min(1, "Flag cannot be empty").max(256, "Flag is too long"),
-  challengeId: z.string().trim().min(1, "Challenge ID is required").max(64, "Challenge ID is too long"),
-  roomId: z.string().trim().min(1, "Room ID is required").max(64, "Room ID is too long"),
+  flag: z
+    .string()
+    .trim()
+    .min(1, "Flag cannot be empty")
+    .max(256, "Flag is too long"),
+  challengeId: z
+    .string()
+    .trim()
+    .min(1, "Challenge ID is required")
+    .max(64, "Challenge ID is too long"),
+  roomId: z
+    .string()
+    .trim()
+    .min(1, "Room ID is required")
+    .max(64, "Room ID is too long"),
 });
 
 export type InsertSubmission = z.infer<typeof submitFlagSchema>;

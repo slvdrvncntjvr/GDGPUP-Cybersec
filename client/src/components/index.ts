@@ -12,7 +12,6 @@ export { default as MobileNav } from "./MobileNav";
 export { default as Navbar } from "./Navbar";
 export { default as RoomCard } from "./RoomCard";
 export { default as RoomDetailModal } from "./RoomDetailModal";
-export { default as RoomsSection } from "./RoomsSection";
 export { default as Shield3D } from "./Shield3D";
 export { default as TrackSelector } from "./TrackSelector";
 

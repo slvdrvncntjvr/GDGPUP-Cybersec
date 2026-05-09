@@ -14,9 +14,57 @@ Community-led cybersecurity learning platform with hands-on rooms, flag submissi
 - User registration and login with team assignment (Blue/Red).
 - Session-based auth with remember-me support.
 - Dashboard showing profile, XP, and submissions.
-- Challenge/room flows with flag submission endpoint.
+- 8 PDF-aligned rooms (RED-1..4, BLUE-1..4) with per-challenge XP.
+- `NEXUS{...}` flag system bound to each user's `TEAM_ID`.
 - Community Hub and routed multi-page UI.
 - Serverless-ready API for Vercel deployment.
+
+## Room Model (PDF-aligned)
+
+| Code   | Session | Title                              | Team   |
+| ------ | ------- | ---------------------------------- | ------ |
+| RED-1  | 5       | Web Exploitation (Juice Shop)      | Red    |
+| RED-2  | 9       | Advanced Application Exploits      | Red    |
+| RED-3  | 11      | Cloud Attacks                      | Red    |
+| RED-4  | 9       | Post-Exploitation Foundations      | Red    |
+| BLUE-1 | 6       | Host & Network Hardening           | Blue   |
+| BLUE-2 | 8       | Monitoring & Packet Analysis      | Blue   |
+| BLUE-3 | 10      | IDS/IPS & SIEM Fundamentals        | Blue   |
+| BLUE-4 | 12      | Incident Response & Cloud Defense  | Blue   |
+
+The full catalog (challenges, points, flag templates) lives in
+[`shared/challengeCatalog.ts`](shared/challengeCatalog.ts).
+
+### Flag Format
+
+Every challenge has a flag of the form:
+
+```text
+NEXUS{<CHALLENGE_TOKEN>_<TEAM_ID>}
+```
+
+Examples for a user whose `TEAM_ID` is `TEAM05`:
+
+- `NEXUS{SQLI_ADMIN_TEAM05}` — RED-1, Challenge 1
+- `NEXUS{HOST_FIREWALL_TEAM05}` — BLUE-1, Challenge 1
+
+Validation is constant-time (`timingSafeEqual`); raw flag values are never
+persisted (only their SHA-256).
+
+### TEAM_ID Workflow
+
+- A unique `TEAM_ID` (e.g. `TEAM01`, `TEAM02`, …) is assigned automatically on
+  registration, backed by a Postgres sequence.
+- The ID is shown on the dashboard profile card and is the value substituted
+  into every flag template — there is no manual entry step.
+- Old deployments using `ADMIN_BOOTSTRAP_TEAM_ID` can drop that variable; it is
+  no longer consulted.
+
+### XP Awards
+
+XP is awarded per-challenge (15–60 each) and only on the **first** successful
+solve of that `(user, room, challenge)` triple, enforced atomically by a unique
+`user_solves` table. Repeated submissions log the attempt without doubling XP.
 
 ## Tech Stack
 
@@ -74,10 +122,14 @@ Open `http://localhost:5000`.
 
 - `npm run dev` start development server
 - `npm run check` run TypeScript checks
+- `npm run test` run the Vitest suite (catalog + API tests)
 - `npm run build` build client and server bundle
 - `npm run build:vercel` build serverless artifact + frontend output
 - `npm run db:push` push Drizzle schema to Postgres
 - `npm start` run production build
+
+CI runs `npm run check`, `npm run test`, and the production builds on every
+PR (see `.github/workflows/ci.yml`).
 
 ## Deployment Notes
 

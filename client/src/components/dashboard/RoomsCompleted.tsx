@@ -70,6 +70,10 @@ function RoomCompletedCard({ room }: { room: RoomCard }) {
   const [, setLocation] = useLocation();
   const Icon = room.icon;
 
+  const showProgress =
+    typeof room.solvedChallenges === "number" &&
+    typeof room.totalChallenges === "number";
+
   return (
     <div
       className={cn(
@@ -94,9 +98,23 @@ function RoomCompletedCard({ room }: { room: RoomCard }) {
             <Icon className={cn("w-6 h-6", teamIconBox[room.team].text)} />
           </div>
 
-          <Badge variant="outline" className={cn("text-xs", teamBadgeColors[room.team])}>
-            {room.team.toUpperCase()}
-          </Badge>
+          <div className="flex flex-col items-end gap-1">
+            {room.roomCode && (
+              <span
+                className={cn(
+                  "px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold border",
+                  room.team === "blue"
+                    ? "bg-cyber-blue/10 text-cyber-blue border-cyber-blue/30"
+                    : "bg-cyber-red/10 text-cyber-red border-cyber-red/30"
+                )}
+              >
+                {room.roomCode}
+              </span>
+            )}
+            <Badge variant="outline" className={cn("text-xs", teamBadgeColors[room.team])}>
+              {room.team.toUpperCase()}
+            </Badge>
+          </div>
         </div>
 
         <div className="flex items-start justify-between gap-3 mb-4">
@@ -109,12 +127,26 @@ function RoomCompletedCard({ room }: { room: RoomCard }) {
           </Badge>
         </div>
 
-        <div className="pt-4 border-t border-border/50 flex items-center justify-end">
+        {showProgress && (
+          <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
+            <Badge variant="secondary" className="font-mono">
+              {room.solvedChallenges}/{room.totalChallenges} challenges
+            </Badge>
+            {typeof room.earnedXp === "number" &&
+              typeof room.totalXp === "number" && (
+                <Badge variant="secondary" className="font-mono">
+                  {room.earnedXp}/{room.totalXp} XP
+                </Badge>
+              )}
+          </div>
+        )}
+
+        <div className="mt-auto pt-4 border-t border-border/50 flex items-center justify-end">
           <Button
             size="sm"
             variant="outline"
             className="gap-1 group/btn"
-            onClick={() => setLocation("/rooms")}
+            onClick={() => setLocation(`/rooms/${room.id}`)}
           >
             Open
             <ArrowRight className="w-3 h-3 group-hover/btn:translate-x-0.5 transition-transform" />

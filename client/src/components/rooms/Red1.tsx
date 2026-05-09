@@ -1,118 +1,323 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Globe, Trophy, Info, ExternalLink, CheckCircle2, Terminal, BookOpen } from "lucide-react";
+import RoomLab, { Bullets, InlineCode, PayloadBlock } from "./RoomLab";
+import type { RoomBodyProps, RoomLessonMap } from "./types";
 
-export default function Red1({ onExit }: { onExit: () => void }) {
-  const [flag, setFlag] = useState("");
+const JUICE_LOGIN = "https://juice-shop.herokuapp.com/#/login";
+const JUICE_HOME = "https://juice-shop.herokuapp.com";
+const JUICE_FEEDBACK = "https://juice-shop.herokuapp.com/#/contact";
 
-  return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-300">
-      <div className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex justify-between shrink-0">
-        <div className="flex gap-3 items-center">
-          <Globe className="text-red-500" />
-          <div>
-            <h2 className="text-xl font-bold text-white">RED-1: SQLi Admin Login</h2>
-            <span className="text-xs text-red-400 font-mono">Challenge 1</span>
-          </div>
-        </div>
-        <Button variant="outline" size="sm" onClick={onExit} className="border-slate-700 text-slate-400 hover:bg-slate-800">Exit</Button>
-      </div>
+const RED_1_LESSONS: RoomLessonMap = {
+  "ch-1": {
+    objective:
+      "Use SQL injection to log in as the administrator without knowing the password.",
+    background: (
+      <p>
+        SQL injection occurs when user input is concatenated directly into a SQL
+        query. The vulnerable lookup roughly looks like:
+        {" "}
+        <InlineCode>
+          SELECT * FROM Users WHERE email = '[INPUT]' AND password = '[HASH]'
+        </InlineCode>
+        . By closing the string and commenting out the rest, the password check
+        is skipped.
+      </p>
+    ),
+    steps: [
+      {
+        title: "Open the login page",
+        body: (
+          <Bullets
+            items={[
+              <>Click <strong>Account ? Login</strong> on Juice Shop.</>,
+              <>The URL should be <InlineCode>/#/login</InlineCode>.</>,
+              <>Open Developer Tools (F12) and watch the Network tab.</>,
+            ]}
+          />
+        ),
+      },
+      {
+        title: "Test a normal login",
+        body: (
+          <>
+            <p>Try a benign credential pair to see how the app responds:</p>
+            <PayloadBlock>{`Email:    test@test.com\nPassword: test123`}</PayloadBlock>
+            <p>Expect <em>"Invalid email or password"</em>.</p>
+          </>
+        ),
+      },
+      {
+        title: "Inject the SQL payload",
+        body: (
+          <>
+            <p>
+              In the <strong>Email</strong> field paste the payload below.
+              Type any value into the password field.
+            </p>
+            <PayloadBlock>{`admin@juice-sh.op'--`}</PayloadBlock>
+            <p>
+              The <InlineCode>--</InlineCode> comments out the password check,
+              and the broken quote terminates the email comparison early.
+            </p>
+          </>
+        ),
+      },
+      {
+        title: "Verify and capture",
+        body: (
+          <Bullets
+            items={[
+              <>You should be logged in as <InlineCode>admin@juice-sh.op</InlineCode>.</>,
+              <>Open <strong>Account ? Score Board</strong> and confirm <em>Login Admin</em> is solved.</>,
+              <>Submit your flag below in the form <InlineCode>{`NEXUS{SQLI_ADMIN_<TEAM_ID>}`}</InlineCode>.</>,
+            ]}
+          />
+        ),
+      },
+    ],
+    verification: [
+      "Bypassed login without knowing a password",
+      "Logged in as admin@juice-sh.op",
+      "'Login Admin' challenge marked as Solved on the Score Board",
+      "Flag accepted by the platform",
+    ],
+    resources: [{ label: "Open target", url: JUICE_LOGIN }],
+  },
 
-      <div className="flex flex-col md:flex-row flex-1 min-h-0">
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          
-          {/* OVERVIEW */}
-          <section className="bg-slate-900 p-6 rounded-xl border border-slate-800">
-            <h3 className="font-bold text-white mb-2 flex gap-2"><Info className="text-red-500"/> Objective</h3>
-            <p className="text-sm leading-relaxed">Use SQL injection to log in as the administrator without knowing the password.</p>
-          </section>
+  "ch-2": {
+    objective:
+      "Use UNION-based SQL injection through the search bar to enumerate user accounts.",
+    background: (
+      <p>
+        UNION-based injection appends rows from another <InlineCode>SELECT</InlineCode>{" "}
+        onto the original result set. You first need to find the column count
+        of the target query, then craft a UNION that returns columns from the
+        users table.
+      </p>
+    ),
+    steps: [
+      {
+        title: "Probe the search endpoint",
+        body: (
+          <>
+            <p>
+              On the home page enter a normal search like{" "}
+              <InlineCode>apple</InlineCode> and observe the URL{" "}
+              <InlineCode>/#/search?q=apple</InlineCode>. Then try:
+            </p>
+            <PayloadBlock>{`apple' OR 1=1--`}</PayloadBlock>
+            <p>
+              If the page suddenly shows every product, the parameter is
+              concatenated into a query.
+            </p>
+          </>
+        ),
+      },
+      {
+        title: "Determine column count",
+        body: (
+          <>
+            <p>
+              Increment <InlineCode>NULL</InlineCode>s until the query returns
+              without an error. Juice Shop uses 9 columns:
+            </p>
+            <PayloadBlock>{`' UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL FROM Users--`}</PayloadBlock>
+          </>
+        ),
+      },
+      {
+        title: "Extract emails &amp; password hashes",
+        body: (
+          <>
+            <p>Place real columns into the visible positions:</p>
+            <PayloadBlock>{`' UNION SELECT NULL, email, password, NULL, NULL, NULL, NULL, NULL, NULL FROM Users--`}</PayloadBlock>
+            <p>
+              The "fake products" rendered in the search results will surface
+              email addresses and password hashes. Count how many unique users
+              you see (typically 15ñ20).
+            </p>
+          </>
+        ),
+      },
+      {
+        title: "Capture the flag",
+        body: (
+          <p>
+            Submit the flag <InlineCode>{`NEXUS{SQLI_UNION_<TEAM_ID>}`}</InlineCode>{" "}
+            below.
+          </p>
+        ),
+      },
+    ],
+    verification: [
+      "Identified the correct column count (9)",
+      "Extracted email addresses via UNION SELECT",
+      "Counted the total number of users",
+      "Score Board shows the user-extraction challenge as Solved",
+    ],
+    resources: [{ label: "Open target", url: JUICE_HOME }],
+  },
 
-          {/* BACKGROUND */}
-          <section className="bg-slate-900 p-6 rounded-xl border border-slate-800">
-            <h3 className="font-bold text-white mb-2 flex gap-2"><BookOpen className="text-red-500"/> Background</h3>
-            <p className="text-sm mb-3">SQL injection occurs when user input is directly concatenated into SQL queries. The vulnerable query looks like:</p>
-            <code className="block bg-black text-green-400 p-3 rounded border-l-2 border-red-500 text-xs font-mono">
-              SELECT * FROM Users WHERE email = 'USER_INPUT' AND password = 'PASSWORD_HASH'
-            </code>
-          </section>
+  "ch-3": {
+    objective:
+      "Trigger reflected XSS by injecting JavaScript through the search parameter.",
+    background: (
+      <p>
+        Reflected XSS happens when input is echoed back into the DOM without
+        sanitisation. Confirming it with a benign alert proves arbitrary
+        JavaScript can run in a victim's browser.
+      </p>
+    ),
+    steps: [
+      {
+        title: "Try a basic payload",
+        body: (
+          <>
+            <p>In the search bar enter:</p>
+            <PayloadBlock>{`<iframe src="javascript:alert('XSS')">`}</PayloadBlock>
+            <p>An alert pops up ó JavaScript executed inside Juice Shop.</p>
+          </>
+        ),
+      },
+      {
+        title: "Show the impact",
+        body: (
+          <>
+            <p>Try one that prints the session cookie:</p>
+            <PayloadBlock>{`<iframe src="javascript:alert(document.cookie)">`}</PayloadBlock>
+            <p>
+              In a real attack this value would be exfiltrated to an
+              attacker-controlled server.
+            </p>
+          </>
+        ),
+      },
+      {
+        title: "Verify on the Score Board",
+        body: (
+          <Bullets
+            items={[
+              <>Open <strong>Account ? Score Board</strong>.</>,
+              <>Look for the DOM XSS / Reflected XSS challenge being marked Solved.</>,
+              <>Submit <InlineCode>{`NEXUS{XSS_REFLECTED_<TEAM_ID>}`}</InlineCode>.</>,
+            ]}
+          />
+        ),
+      },
+    ],
+    verification: [
+      "JavaScript executed in the browser via the search field",
+      "Demonstrated session-cookie disclosure with alert()",
+      "DOM XSS / Reflected XSS challenge marked as Solved",
+    ],
+    resources: [{ label: "Open target", url: JUICE_HOME }],
+  },
 
-          {/* INSTRUCTIONS */}
-          <section className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-            <h3 className="font-bold text-white mb-4 flex gap-2"><Terminal className="text-red-500"/> Detailed Instructions</h3>
-            <div className="space-y-6 text-sm">
-              <div className="p-4 bg-slate-950 rounded border border-slate-800">
-                <strong className="text-white block mb-2">Step 1: Navigate to Login Page</strong>
-                <ul className="list-disc pl-5 space-y-1 text-slate-400">
-                  <li>On Juice Shop homepage, click "Account" GÂ∆ "Login".</li>
-                  <li>URL should be: `/#/login`.</li>
-                  <li>Open Developer Tools (F12) and go to the Network tab.</li>
-                </ul>
-                <Button className="mt-3 bg-red-600 hover:bg-red-700 text-white h-8 text-xs" onClick={() => window.open('https://juice-shop.herokuapp.com/#/login', '_blank')}>
-                   <ExternalLink className="w-3 h-3 mr-2" /> Open Target
-                </Button>
-              </div>
+  "ch-4": {
+    objective:
+      "Submit an XSS payload through the customer feedback form so it persists in the application data.",
+    background: (
+      <p>
+        Persistent (stored) XSS lives in the application's data store and runs
+        whenever the affected page is rendered. It is more dangerous than
+        reflected XSS because the attacker doesn't need to coerce victims into
+        a malicious URL.
+      </p>
+    ),
+    steps: [
+      {
+        title: "Open the feedback form",
+        body: (
+          <Bullets
+            items={[
+              <>Scroll to the bottom of the homepage and click <strong>Customer Feedback</strong>, or open <InlineCode>/#/contact</InlineCode>.</>,
+              <>Solve the simple math CAPTCHA when prompted.</>,
+            ]}
+          />
+        ),
+      },
+      {
+        title: "Submit the payload",
+        body: (
+          <>
+            <p>In the comment field enter:</p>
+            <PayloadBlock>{`<iframe src="javascript:alert('Stored_XSS')">`}</PayloadBlock>
+          </>
+        ),
+      },
+      {
+        title: "Confirm persistence",
+        body: (
+          <p>
+            Logged-in admins can review feedback in the admin panel ó your
+            payload will execute there. The Score Board entry to look for is{" "}
+            <em>API-only XSS</em> or similar. Then submit{" "}
+            <InlineCode>{`NEXUS{XSS_STORED_<TEAM_ID>}`}</InlineCode>.
+          </p>
+        ),
+      },
+    ],
+    verification: [
+      "Stored XSS payload accepted by the feedback form",
+      "Payload survives a page reload",
+      "Stored XSS challenge marked as Solved",
+    ],
+    resources: [{ label: "Open target", url: JUICE_FEEDBACK }],
+  },
 
-              <div className="p-4 bg-slate-950 rounded border border-slate-800">
-                <strong className="text-white block mb-2">Step 2: Test for SQL Injection</strong>
-                <ul className="list-disc pl-5 space-y-1 text-slate-400">
-                  <li>Attempt a normal login (e.g., `test@test.com` / `test123`).</li>
-                  <li>Observe the "Invalid email or password" error.</li>
-                </ul>
-              </div>
+  "ch-5": {
+    objective:
+      "Reset Jim's password by guessing his security question and log in as him.",
+    background: (
+      <p>
+        Authentication weaknesses don't always require SQL injection. A weak
+        password-reset flow that relies on a guessable security question can
+        give attackers full account takeover.
+      </p>
+    ),
+    steps: [
+      {
+        title: "Start the reset",
+        body: (
+          <Bullets
+            items={[
+              <>Open <strong>Login ? Forgot your password?</strong></>,
+              <>Enter <InlineCode>jim@juice-sh.op</InlineCode>.</>,
+            ]}
+          />
+        ),
+      },
+      {
+        title: "Answer the security question",
+        body: (
+          <p>
+            Jim's "eldest sibling's middle name" is{" "}
+            <InlineCode>Samuel</InlineCode> ó the official Juice Shop OSINT
+            answer. Use it to authorise the reset.
+          </p>
+        ),
+      },
+      {
+        title: "Set a new password and log in",
+        body: (
+          <Bullets
+            items={[
+              <>Set a new password (e.g. <InlineCode>newpassword123</InlineCode>).</>,
+              <>Log in as <InlineCode>jim@juice-sh.op</InlineCode>.</>,
+              <>Confirm <em>Reset Jim's Password</em> on the Score Board.</>,
+              <>Submit <InlineCode>{`NEXUS{RESET_JIM_PASSWORD_<TEAM_ID>}`}</InlineCode>.</>,
+            ]}
+          />
+        ),
+      },
+    ],
+    verification: [
+      "Reset Jim's password using the correct security answer",
+      "Logged in as jim@juice-sh.op",
+      "'Reset Jim's Password' challenge marked Solved",
+    ],
+    resources: [{ label: "Open target", url: JUICE_LOGIN }],
+  },
+};
 
-              <div className="p-4 bg-slate-950 rounded border border-slate-800">
-                <strong className="text-white block mb-2">Step 3: Exploitation Payload</strong>
-                <p className="mb-2">In the <strong>Email</strong> field, enter the payload below. Enter <em>anything</em> in the password field.</p>
-                <code className="block bg-black text-green-400 p-3 rounded border-l-2 border-red-500 font-mono text-xs mb-2">
-                  admin@juice-shop-'--
-                </code>
-                <p className="text-xs text-slate-500">The `--` comments out the password check, bypassing authentication.</p>
-              </div>
-
-              <div className="p-4 bg-slate-950 rounded border border-slate-800">
-                <strong className="text-white block mb-2">Step 4: Verify Success</strong>
-                <ul className="list-disc pl-5 space-y-1 text-slate-400">
-                  <li>Click Log in. You should be logged in as `admin@juice-sh.op`.</li>
-                  <li>Check the Score Board; "Login Admin" should now show Solved.</li>
-                </ul>
-              </div>
-            </div>
-          </section>
-
-          {/* VERIFICATION */}
-          <section className="bg-green-900/10 border border-green-900/30 rounded-xl p-6">
-             <h3 className="font-bold text-green-400 mb-4 flex gap-2"><CheckCircle2 className="text-green-500"/> Verification Checklist</h3>
-             <ul className="space-y-2 text-sm text-slate-300">
-               {[
-                 "Successfully bypassed login without knowing password",
-                 "Logged in as admin@juice-sh.op",
-                 "'Login Admin' challenge shows as Solved on Score Board",
-                 "Submitted flag to Nexus platform"
-               ].map((item, i) => (
-                 <li key={i} className="flex gap-2 items-start">
-                   <span className="text-green-500 mt-0.5">G£Ù</span> {item}
-                 </li>
-               ))}
-             </ul>
-          </section>
-          <div className="h-10"></div>
-        </div>
-
-        <div className="w-full md:w-80 bg-slate-900 border-l border-slate-800 p-6 overflow-y-auto">
-           <div className="bg-black p-4 rounded-xl text-center border border-slate-800 mb-6">
-             <Trophy className="w-6 h-6 text-yellow-500 mx-auto mb-2"/>
-             <h3 className="font-bold text-white">Submission</h3>
-           </div>
-           <div className="space-y-4">
-             <Label className="text-red-500 font-bold text-xs uppercase">Enter Flag</Label>
-             <Input value={flag} onChange={(e) => setFlag(e.target.value)} className="bg-slate-950 border-slate-700 text-white font-mono mt-2" placeholder="NEXUS{...}" />
-             <Button className="w-full bg-red-600 hover:bg-red-700 text-white">Validate Flag</Button>
-             <p className="text-xs text-slate-500 text-center">Format: NEXUS&#123;SQLI_ADMIN&#125;</p>
-           </div>
-        </div>
-      </div>
-    </div>
-  );
+export default function Red1Body(props: RoomBodyProps) {
+  return <RoomLab {...props} lessons={RED_1_LESSONS} />;
 }

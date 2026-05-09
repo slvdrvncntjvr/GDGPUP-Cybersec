@@ -1,70 +1,95 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Shield, Trophy, Info, BookOpen, CheckCircle2, Terminal } from "lucide-react";
+import RoomLab, { Bullets, InlineCode, PayloadBlock } from "./RoomLab";
+import type { RoomBodyProps, RoomLessonMap } from "./types";
 
-export default function Blue1({ onExit }: { onExit: () => void }) {
-  const [flag, setFlag] = useState("");
+const BLUE_3_LESSONS: RoomLessonMap = {
+  "ch-1": {
+    objective:
+      "Author a Snort/Suricata signature that fires on the lab IOC.",
+    background: (
+      <p>
+        Signature-based detection is brittle, but it is also the cheapest way
+        to get an immediate alert when a known IOC shows up. The art is in
+        keeping signatures specific enough to avoid noise.
+      </p>
+    ),
+    steps: [
+      {
+        title: "Pick the IOC",
+        body: (
+          <Bullets
+            items={[
+              <>From BLUE-2 you should already have a payload string or URI in mind.</>,
+              <>Pick something stable: a unique URI path or a header substring.</>,
+            ]}
+          />
+        ),
+      },
+      {
+        title: "Write the rule",
+        body: (
+          <PayloadBlock>{`alert http any any -> $HOME_NET any (\n  msg:"GDG-Lab webshell URI";\n  flow:to_server,established;\n  http.uri; content:"/cmd.php";\n  classtype:web-application-attack;\n  sid:1000001; rev:1;\n)`}</PayloadBlock>
+        ),
+      },
+      {
+        title: "Capture the flag",
+        body: (
+          <p>
+            Replay the capture against your IDS, confirm the alert fires, and
+            submit <InlineCode>{`NEXUS{IDS_SIGNATURE_<TEAM_ID>}`}</InlineCode>.
+          </p>
+        ),
+      },
+    ],
+    verification: [
+      "Rule loaded by Snort/Suricata without errors",
+      "Alert fires on the malicious request and not on benign traffic",
+      "SID is non-conflicting",
+    ],
+  },
+  "ch-2": {
+    objective:
+      "Build a SIEM correlation rule that ties the IDS hit to a recent auth failure.",
+    background: (
+      <p>
+        Single-source detections create alert fatigue. Correlation rules are
+        what convert raw events into a story analysts can triage.
+      </p>
+    ),
+    steps: [
+      {
+        title: "Ingest two sources",
+        body: (
+          <Bullets
+            items={[
+              <>Send IDS alerts and authentication logs into the SIEM.</>,
+              <>Confirm both indices are queryable.</>,
+            ]}
+          />
+        ),
+      },
+      {
+        title: "Correlate",
+        body: (
+          <PayloadBlock>{`# pseudocode\nIF (auth_failed FROM src_ip in last 5m) > 5\nAND (ids_alert FROM src_ip in last 5m) >= 1\nTHEN alert("possible compromise from " + src_ip)`}</PayloadBlock>
+        ),
+      },
+      {
+        title: "Capture the flag",
+        body: (
+          <p>
+            Submit <InlineCode>{`NEXUS{SIEM_CORRELATION_<TEAM_ID>}`}</InlineCode>.
+          </p>
+        ),
+      },
+    ],
+    verification: [
+      "Both event sources ingested",
+      "Correlation rule fires on the lab scenario",
+      "Alert is enriched with the source IP and a short story",
+    ],
+  },
+};
 
-  return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-300">
-      {/* Header - BLUE ACCENTS */}
-      <div className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex justify-between shrink-0">
-        <div className="flex gap-3 items-center">
-          <Shield className="text-blue-500" />
-          <div>
-            <h2 className="text-xl font-bold text-white">BLUE-1: SIEM Alert Triage</h2>
-            <span className="text-xs text-blue-400 font-mono">Placeholder</span>
-          </div>
-        </div>
-        <Button variant="outline" size="sm" onClick={onExit} className="border-slate-700 text-slate-400 hover:bg-slate-800">Exit</Button>
-      </div>
-
-      <div className="flex flex-col md:flex-row flex-1 min-h-0">
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          
-          {/* Overview */}
-          <section className="bg-slate-900 p-6 rounded-xl border border-slate-800">
-            <h3 className="font-bold text-white mb-2 flex gap-2"><Info className="text-blue-500"/> Overview</h3>
-            <p className="text-sm leading-relaxed text-slate-400">Analyze logs to identify and classify suspicious authentication events.</p>
-          </section>
-
-          {/* Background */}
-          <section className="bg-slate-900 p-6 rounded-xl border border-slate-800">
-            <h3 className="font-bold text-white mb-2 flex gap-2"><BookOpen className="text-blue-500"/> Background</h3>
-            <p className="text-sm text-slate-500 italic">Content pending...</p>
-          </section>
-
-          {/* Instructions */}
-          <section className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-            <h3 className="font-bold text-white mb-4 flex gap-2"><Terminal className="text-blue-500"/> Detailed Instructions</h3>
-            <div className="p-8 text-center border-2 border-dashed border-slate-800 rounded-lg">
-               <Shield className="w-12 h-12 text-slate-700 mx-auto mb-3" />
-               <p className="text-slate-500 font-medium">Lab Environment Construction in Progress</p>
-            </div>
-          </section>
-
-          {/* Verification */}
-          <section className="bg-blue-900/10 border border-blue-900/30 rounded-xl p-6">
-             <h3 className="font-bold text-blue-400 mb-2 flex gap-2"><CheckCircle2 className="text-blue-500"/> Verification Checklist</h3>
-             <ul className="space-y-1 text-sm text-slate-500 italic">
-               <li>[Pending verification steps]</li>
-             </ul>
-          </section>
-          <div className="h-10"></div>
-        </div>
-
-        <div className="w-full md:w-80 bg-slate-900 border-l border-slate-800 p-6 overflow-y-auto">
-           <div className="bg-black p-4 rounded-xl text-center border border-slate-800 mb-6">
-             <Trophy className="w-6 h-6 text-blue-500 mx-auto mb-2"/>
-             <h3 className="font-bold text-white">Submission</h3>
-           </div>
-           <div className="text-center text-slate-500 text-xs mt-10">
-             Submissions unavailable.
-           </div>
-        </div>
-      </div>
-    </div>
-  );
+export default function Blue3Body(props: RoomBodyProps) {
+  return <RoomLab {...props} lessons={BLUE_3_LESSONS} />;
 }

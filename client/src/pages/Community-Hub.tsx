@@ -11,7 +11,15 @@ import { openAuthModal } from "@/lib/openAuthModal";
 export default function CommunityHub() {
     const [teamHover, setTeamHover] = useState<'red' | 'blue' | null>(null);
 
-    const studyJams = [
+    interface StudyJam {
+        id: string;
+        title: string;
+        description: string;
+        /** Optional cover image URL. When set we render the image instead of the placeholder block. */
+        coverUrl?: string;
+    }
+
+    const studyJams: StudyJam[] = [
         {
             id: "item-1",
             title: 'SJ 1: Linux Setup and Basic Commands',
@@ -88,19 +96,22 @@ export default function CommunityHub() {
                                     {jam.description}
                                 </p>
                                 
-                                {/* REPLACE THE DIV BELOW WITH YOUR PHOTO.
-                                    Recommended size: 800px width by 400px height (800x400).
-                                    
-                                    Example:
-                                    <img src="/your-image-path.jpg" alt={jam.title} className="w-full h-52 object-cover rounded-lg border border-border/50 shadow-inner" />
-                                */}
-                                <div className="w-full h-52 rounded-lg border border-border/50 bg-background/50 flex flex-col items-center justify-center shadow-inner group-hover:border-primary/20 relative overflow-hidden transition-colors">
-                                    <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500 ease-in-out" />
-                                    <Camera className="w-8 h-8 text-muted-foreground/50 mb-3 group-hover:text-primary/70 transition-colors duration-300 z-10" />
-                                    <span className="font-mono text-[10px] text-muted-foreground/50 group-hover:text-primary/70 transition-colors duration-300 z-10 tracking-widest uppercase">
-                                        [ Awaiting Visual Data ]
-                                    </span>
-                                </div>
+                                {jam.coverUrl ? (
+                                    <img
+                                        src={jam.coverUrl}
+                                        alt={jam.title}
+                                        loading="lazy"
+                                        className="w-full h-52 object-cover rounded-lg border border-border/50 shadow-inner"
+                                    />
+                                ) : (
+                                    <div className="w-full h-52 rounded-lg border border-border/50 bg-background/50 flex flex-col items-center justify-center shadow-inner group-hover:border-primary/20 relative overflow-hidden transition-colors">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500 ease-in-out" />
+                                        <Camera className="w-8 h-8 text-muted-foreground/50 mb-3 group-hover:text-primary/70 transition-colors duration-300 z-10" />
+                                        <span className="font-mono text-[10px] text-muted-foreground/50 group-hover:text-primary/70 transition-colors duration-300 z-10 tracking-widest uppercase">
+                                            [ Awaiting Visual Data ]
+                                        </span>
+                                    </div>
+                                )}
 
                             </AccordionContent>
                         </AccordionItem>

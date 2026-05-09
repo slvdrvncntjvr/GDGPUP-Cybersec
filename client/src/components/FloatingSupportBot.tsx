@@ -12,11 +12,69 @@ interface Message {
   content: string;
 }
 
+// Deterministic FAQ. We are upfront that this is NOT an LLM — it pattern-matches
+// against the most common questions we see in the GDG Cybersec track.
+interface FaqEntry {
+  matches: RegExp;
+  answer: string;
+}
+
+const FAQ: FaqEntry[] = [
+  {
+    matches: /\b(team[\s_-]?id|teamid)\b/i,
+    answer:
+      "Your TEAM_ID is shown on your profile page (Dashboard → Profile). It's the value substituted into every NEXUS{...} flag — for example NEXUS{SQLI_ADMIN_TEAM05}. Click the badge on your profile to copy it.",
+  },
+  {
+    matches: /\b(flag|nexus|format|submit)\b/i,
+    answer:
+      "Flags follow the pattern NEXUS{<CHALLENGE>_<TEAM_ID>}. Submit them on the room's Challenges tab. Capitalisation matters; whitespace is trimmed for you.",
+  },
+  {
+    matches: /\b(red|red[\s-]?team|offens(e|ive))\b/i,
+    answer:
+      "RED-1..4 cover offensive labs: Web Exploit, Advanced Web, Cloud Attacks, and Post-Exploitation. Start with RED-1 (OWASP Juice Shop).",
+  },
+  {
+    matches: /\b(blue|blue[\s-]?team|defens(e|ive))\b/i,
+    answer:
+      "BLUE-1..4 cover defensive labs: Hardening, Packet Analysis, IDS/SIEM, and Incident Response + Cloud Defense. Start with BLUE-1.",
+  },
+  {
+    matches: /\b(juice[\s-]?shop|owasp)\b/i,
+    answer:
+      "We use OWASP Juice Shop as the RED-1 target. Hosted instances: https://juice-shop.herokuapp.com or https://demo.owasp-juice.shop. RED-1 walks you through SQLi, XSS, and password-reset abuse.",
+  },
+  {
+    matches: /\b(xp|points|score)\b/i,
+    answer:
+      "Each challenge awards a fixed amount of XP (15–60). XP is awarded only on the FIRST successful solve — repeated submissions log an attempt without doubling.",
+  },
+  {
+    matches: /\b(login|logout|account|register|sign[\s-]?up)\b/i,
+    answer:
+      "Use the Sign In / Sign Up button in the top nav. After logging in, your TEAM_ID becomes available on the dashboard and the Rooms page.",
+  },
+];
+
+const FALLBACK_ANSWER =
+  "I'm a static FAQ helper, not an LLM. Try asking about: TEAM_ID, flag format, NEXUS, RED-1..4, BLUE-1..4, XP, or login. For anything else, ping the Discord linked in the community page.";
+
+function answerFor(question: string): string {
+  for (const entry of FAQ) {
+    if (entry.matches.test(question)) {
+      return entry.answer;
+    }
+  }
+  return FALLBACK_ANSWER;
+}
+
 const initialMessages: Message[] = [
   {
     id: "1",
     role: "assistant",
-    content: "Hey there! I'm your security assistant. I can help you navigate rooms, explain concepts, or give hints on challenges. What would you like to know?",
+    content:
+      "Hi — I'm a static help bot (no LLM behind the curtain). Ask me about TEAM_ID, flag format, NEXUS, room codes, XP, or login.",
   },
 ];
 
@@ -100,21 +158,14 @@ export default function FloatingSupportBot() {
     setIsTyping(true);
 
     setTimeout(() => {
-      const responses = [
-        "Great question! In cybersecurity, understanding the fundamentals is key. Would you like me to explain more about this topic?",
-        "I can help with that! This relates to the room you're in. Try checking the logs for suspicious activity.",
-        "That's a common challenge. The hint is to look for privilege escalation vectors - check SUID binaries first!",
-        "For blue team defense, start by analyzing the SIEM alerts. Look for patterns in failed login attempts.",
-        "Red team tip: Always enumerate thoroughly before exploiting. Information gathering is 80% of the work!",
-      ];
       const response: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: responses[Math.floor(Math.random() * responses.length)],
+        content: answerFor(userMessage.content),
       };
       setMessages((prev) => [...prev, response]);
       setIsTyping(false);
-    }, 1500);
+    }, 400);
   };
 
   return ( 

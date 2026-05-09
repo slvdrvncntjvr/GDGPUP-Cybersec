@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useRoute } from "wouter";
 import Navbar from "@/components/Navbar";
@@ -18,28 +18,44 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  AlertTriangle,
+  CloudCog,
+  Crosshair,
+  Eye,
+  FileSearch,
+  Lock,
+  Network,
   Search,
   Shield,
-  Crosshair,
   SlidersHorizontal,
-  X,
-  AlertTriangle,
   Terminal,
-  Eye,
-  Network,
-  Lock,
-  FileSearch,
-  Cpu,
-  Database,
+  X,
 } from "lucide-react";
-import { LucideIcon } from "lucide-react";
-import { ROOMS_CATALOG } from "@shared/challengeCatalog";
+import type { LucideIcon } from "lucide-react";
+import type { RoomCode } from "@shared/challengeCatalog";
+import type { RoomContent, RoomsContentResponse } from "@shared/content";
 
 type TeamFilter = "all" | "blue" | "red";
 type DifficultyFilter = "all" | "Beginner" | "Intermediate" | "Advanced";
 
-interface Room {
+interface RoomsProgressResponse {
+  solvedKeys: string[];
+}
+
+const iconByRoomCode: Record<RoomCode, LucideIcon> = {
+  "RED-1": Crosshair,
+  "RED-2": Network,
+  "RED-3": CloudCog,
+  "RED-4": Terminal,
+  "BLUE-1": Lock,
+  "BLUE-2": FileSearch,
+  "BLUE-3": Eye,
+  "BLUE-4": AlertTriangle,
+};
+
+interface RoomCardModel {
   id: string;
+  roomCode: RoomCode;
   title: string;
   description: string;
   icon: LucideIcon;
@@ -48,39 +64,10 @@ interface Room {
   participants: number;
   tags: string[];
   team: "blue" | "red";
-  progress?: number;
-  objectives?: string[];
-  prerequisites?: string[];
-  challenges: { id: string; title: string; description: string; completed: boolean; points: number }[];
+  progress: number;
+  completed: number;
+  total: number;
 }
-
-interface RoomsProgressResponse {
-  solvedKeys: string[];
-}
-
-const iconByRoomId: Record<string, LucideIcon> = {
-  "siem-triage": Shield,
-  "windows-hunt": FileSearch,
-  "firewall-hardening": Lock,
-  "incident-response": AlertTriangle,
-  "memory-forensics": Cpu,
-  "web-sqli": Crosshair,
-  "linux-privesc": Terminal,
-  "osint-recon": Eye,
-  "ad-attack": Network,
-  "xss-exploitation": Crosshair,
-  "api-exploitation": Database,
-  "log-analysis": FileSearch,
-};
-
-const allRooms: Room[] = ROOMS_CATALOG.map((room) => ({
-  ...room,
-  icon: iconByRoomId[room.id] ?? Shield,
-  challenges: room.challenges.map((challenge) => ({
-    ...challenge,
-    completed: false,
-  })),
-}));
 
 export default function Rooms() {
   const [teamFilter, setTeamFilter] = useState<TeamFilter>("all");
@@ -88,10 +75,27 @@ export default function Rooms() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [, setLocation] = useLocation();
-  const [roomOnlyMatch, roomOnlyParams] = useRoute<{ roomId: string }>("/rooms/:roomId");
-  const [challengeMatch, challengeParams] = useRoute<{ roomId: string; challengeId: string }>(
-    "/rooms/:roomId/challenges/:challengeId"
+  const [roomOnlyMatch, roomOnlyParams] = useRoute<{ roomId: string }>(
+    "/rooms/:roomId"
   );
+  const [challengeMatch, challengeParams] = useRoute<{
+    roomId: string;
+    challengeId: string;
+  }>("/rooms/:roomId/challenges/:challengeId");
+
+  const { data: contentData, isLoading: isLoadingRooms } =
+    useQuery<RoomsContentResponse>({
+      queryKey: ["/api/content/rooms"],
+      queryFn: async () => {
+        const res = await fetch("/api/content/rooms", {
+          credentials: "include",
+        });
+        if (!res.ok) {
+          throw new Error("Failed to load room catalog");
+        }
+        return res.json() as Promise<RoomsContentResponse>;
+      },
+    });
 
   const { data: progressData } = useQuery<RoomsProgressResponse>({
     queryKey: ["/api/rooms/progress"],
@@ -103,25 +107,41 @@ export default function Rooms() {
     retry: false,
   });
 
-  const roomsWithProgress = useMemo(() => {
-    const solved = new Set(progressData?.solvedKeys ?? []);
-    return allRooms.map((room) => {
-      const challenges = room.challenges.map((challenge) => ({
-        ...challenge,
-        completed: solved.has(`${room.id}:${challenge.id}`),
-      }));
+  const allRooms = useMemo<RoomContent[]>(
+    () => contentData?.rooms ?? [],
+    [contentData?.rooms]
+  );
 
-      const total = challenges.length;
-      const completed = challenges.filter((challenge) => challenge.completed).length;
+  const solvedKeys = useMemo(
+    () => new Set(progressData?.solvedKeys ?? []),
+    [progressData?.solvedKeys]
+  );
+
+  const cardModels = useMemo<RoomCardModel[]>(() => {
+    return allRooms.map((room) => {
+      const total = room.challenges.length;
+      const completed = room.challenges.filter((ch) =>
+        solvedKeys.has(`${room.id}:${ch.id}`)
+      ).length;
       const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
       return {
-        ...room,
-        challenges,
+        id: room.id,
+        roomCode: room.roomCode,
+        title: room.title,
+        description: room.description,
+        icon: iconByRoomCode[room.roomCode] ?? Shield,
+        difficulty: room.difficulty,
+        duration: room.duration,
+        participants: room.participants,
+        tags: room.tags,
+        team: room.team,
         progress,
+        completed,
+        total,
       };
     });
-  }, [progressData?.solvedKeys]);
+  }, [allRooms, solvedKeys]);
 
   const routeRoomId = challengeMatch
     ? challengeParams.roomId
@@ -131,15 +151,23 @@ export default function Rooms() {
   const routeChallengeId = challengeMatch ? challengeParams.challengeId : null;
 
   const selectedRoom = useMemo(
-    () => (routeRoomId ? roomsWithProgress.find((room) => room.id === routeRoomId) ?? null : null),
-    [roomsWithProgress, routeRoomId]
+    () =>
+      routeRoomId ? allRooms.find((room) => room.id === routeRoomId) ?? null : null,
+    [allRooms, routeRoomId]
   );
 
+  const selectedRoomSolvedChallengeIds = useMemo(() => {
+    if (!selectedRoom) return [] as string[];
+    return selectedRoom.challenges
+      .filter((ch) => solvedKeys.has(`${selectedRoom.id}:${ch.id}`))
+      .map((ch) => ch.id);
+  }, [selectedRoom, solvedKeys]);
+
   useEffect(() => {
-    if (routeRoomId && !selectedRoom) {
+    if (routeRoomId && !selectedRoom && !isLoadingRooms) {
       setLocation("/rooms");
     }
-  }, [routeRoomId, selectedRoom, setLocation]);
+  }, [routeRoomId, selectedRoom, setLocation, isLoadingRooms]);
 
   const openRoom = (roomId: string) => {
     setLocation(`/rooms/${roomId}`);
@@ -150,21 +178,27 @@ export default function Rooms() {
   };
 
   const filteredRooms = useMemo(() => {
-    return roomsWithProgress.filter((room) => {
+    const q = searchQuery.toLowerCase();
+    return cardModels.filter((room) => {
       const matchesTeam = teamFilter === "all" || room.team === teamFilter;
-      const matchesDifficulty = difficultyFilter === "all" || room.difficulty === difficultyFilter;
+      const matchesDifficulty =
+        difficultyFilter === "all" || room.difficulty === difficultyFilter;
       const matchesSearch =
         searchQuery === "" ||
-        room.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        room.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        room.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+        room.title.toLowerCase().includes(q) ||
+        room.description.toLowerCase().includes(q) ||
+        room.roomCode.toLowerCase().includes(q) ||
+        room.tags.some((tag) => tag.toLowerCase().includes(q));
 
       return matchesTeam && matchesDifficulty && matchesSearch;
     });
-  }, [roomsWithProgress, teamFilter, difficultyFilter, searchQuery]);
+  }, [cardModels, teamFilter, difficultyFilter, searchQuery]);
 
   const activeFilters = [
-    teamFilter !== "all" && { key: "team", label: teamFilter === "blue" ? "Defense" : "Offense" },
+    teamFilter !== "all" && {
+      key: "team",
+      label: teamFilter === "blue" ? "Defense" : "Offense",
+    },
     difficultyFilter !== "all" && { key: "difficulty", label: difficultyFilter },
     searchQuery && { key: "search", label: `"${searchQuery}"` },
   ].filter(Boolean) as { key: string; label: string }[];
@@ -192,8 +226,9 @@ export default function Rooms() {
               Interactive Rooms
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl">
-              Choose your discipline and jump into hands-on cybersecurity labs.
-              Filter by team, difficulty, or search for specific topics.
+              Eight sessioned labs covering Red Team offence (RED-1…4) and
+              Blue Team defence (BLUE-1…4). Pick a room, study the lab, then
+              capture the flag.
             </p>
           </div>
 
@@ -217,7 +252,9 @@ export default function Rooms() {
                   className="hidden sm:block"
                 >
                   <TabsList>
-                    <TabsTrigger value="all" data-testid="filter-all">All</TabsTrigger>
+                    <TabsTrigger value="all" data-testid="filter-all">
+                      All
+                    </TabsTrigger>
                     <TabsTrigger value="blue" data-testid="filter-blue">
                       <Shield className="w-4 h-4 mr-1.5" />
                       Defense
@@ -231,9 +268,14 @@ export default function Rooms() {
 
                 <Select
                   value={difficultyFilter}
-                  onValueChange={(v) => setDifficultyFilter(v as DifficultyFilter)}
+                  onValueChange={(v) =>
+                    setDifficultyFilter(v as DifficultyFilter)
+                  }
                 >
-                  <SelectTrigger className="w-[140px]" data-testid="select-difficulty">
+                  <SelectTrigger
+                    className="w-[140px]"
+                    data-testid="select-difficulty"
+                  >
                     <SelectValue placeholder="Difficulty" />
                   </SelectTrigger>
                   <SelectContent>
@@ -273,7 +315,9 @@ export default function Rooms() {
 
             {activeFilters.length > 0 && (
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm text-muted-foreground">Active filters:</span>
+                <span className="text-sm text-muted-foreground">
+                  Active filters:
+                </span>
                 {activeFilters.map((filter) => (
                   <Badge
                     key={filter.key}
@@ -296,12 +340,14 @@ export default function Rooms() {
             )}
           </div>
 
-          {filteredRooms.length === 0 ? (
+          {!isLoadingRooms && filteredRooms.length === 0 ? (
             <div className="text-center py-16">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
                 <Search className="w-8 h-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">No rooms found</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                No rooms found
+              </h3>
               <p className="text-muted-foreground mb-4">
                 Try adjusting your filters or search query
               </p>
@@ -309,16 +355,35 @@ export default function Rooms() {
                 Clear all filters
               </Button>
             </div>
+          ) : isLoadingRooms ? (
+            <div className="text-center py-16">
+              <p className="text-muted-foreground">Loading rooms...</p>
+            </div>
           ) : (
             <>
               <p className="text-sm text-muted-foreground mb-6">
-                Showing {filteredRooms.length} room{filteredRooms.length !== 1 ? "s" : ""}
+                Showing {filteredRooms.length} room
+                {filteredRooms.length !== 1 ? "s" : ""}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredRooms.map((room, index) => (
-                  <div key={room.id} onClick={() => openRoom(room.id)} className="cursor-pointer">
+                  <div
+                    key={room.id}
+                    onClick={() => openRoom(room.id)}
+                    className="cursor-pointer"
+                  >
                     <RoomCard
-                      {...room}
+                      id={room.id}
+                      title={room.title}
+                      description={room.description}
+                      icon={room.icon}
+                      difficulty={room.difficulty}
+                      duration={room.duration}
+                      participants={room.participants}
+                      tags={room.tags}
+                      team={room.team}
+                      progress={room.progress}
+                      roomCode={room.roomCode}
                       delay={0.03 * index}
                       onJoin={() => openRoom(room.id)}
                     />
@@ -336,7 +401,10 @@ export default function Rooms() {
           onOpenChange={(open) => !open && setLocation("/rooms")}
           initialTab={routeChallengeId ? "challenges" : "overview"}
           initialChallengeId={routeChallengeId}
-          onNavigateChallenge={(challengeId) => openRoomChallenge(selectedRoom.id, challengeId)}
+          onNavigateChallenge={(challengeId) =>
+            openRoomChallenge(selectedRoom.id, challengeId)
+          }
+          solvedChallengeIds={selectedRoomSolvedChallengeIds}
           room={selectedRoom}
         />
       )}

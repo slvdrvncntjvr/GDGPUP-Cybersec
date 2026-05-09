@@ -10,6 +10,7 @@ import passport from "passport";
 import { hashPassword } from "./auth";
 import { getChallengeMeta } from "./challenges";
 import { ROOMS_CATALOG } from "@shared/challengeCatalog";
+import { buildRoomsContentResponse } from "@shared/content";
 
 const SESSION_7_DAYS_MS = 1000 * 60 * 60 * 24 * 7;
 const SESSION_30_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
@@ -46,16 +47,12 @@ function regenerateSession(req: any): Promise<void> {
   });
 }
 
-// Middleware: require an active session
 function requireAuth(req: any, res: any, next: any) {
   if (req.isAuthenticated()) return next();
   res.status(401).json({ message: "Not authenticated" });
 }
 
-export async function registerRoutes(
-  app: Express
-): Promise<void> {
-
+export async function registerRoutes(app: Express): Promise<void> {
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok" });
   });
@@ -64,85 +61,96 @@ export async function registerRoutes(
     res.json({ rooms: ROOMS_CATALOG });
   });
 
+  app.get("/api/content/rooms", (_req, res) => {
+    res.json(buildRoomsContentResponse(ROOMS_CATALOG));
+  });
+
   // ── POST /api/register ───────────────────────────────────────────────────
 
-  app.post("/api/register", withAsync(async (req, res) => {
-    const parsed = registerSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({
-        message: parsed.error.errors[0]?.message ?? "Invalid input",
+  app.post(
+    "/api/register",
+    withAsync(async (req, res) => {
+      const parsed = registerSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          message: parsed.error.errors[0]?.message ?? "Invalid input",
+        });
+      }
+
+      const { username, password, name, team } = parsed.data;
+
+      const existing = await storage.getUserByUsername(username);
+      if (existing) {
+        return res.status(409).json({ message: "Email already registered" });
+      }
+
+      const user = await storage.createUser({
+        username,
+        password: hashPassword(password),
+        name,
+        team,
       });
-    }
+      const pub = storage.toPublic(user);
 
-    const { username, password, name, team } = parsed.data;
+      await regenerateSession(req);
 
-    const existing = await storage.getUserByUsername(username);
-    if (existing) {
-      return res.status(409).json({ message: "Email already registered" });
-    }
-
-    const user = await storage.createUser({
-      username,
-      password: hashPassword(password),
-      name,
-      team,
-    });
-    const pub = storage.toPublic(user);
-
-    await regenerateSession(req);
-
-    // Log in immediately after registration
-    await new Promise<void>((resolve, reject) => {
-      req.login(user, (err: any) => {
-        if (err) return reject(err);
-        resolve();
+      await new Promise<void>((resolve, reject) => {
+        req.login(user, (err: any) => {
+          if (err) return reject(err);
+          resolve();
+        });
       });
-    });
 
-    await saveSession(req);
+      await saveSession(req);
 
-    return res.status(201).json(pub);
-  }));
+      return res.status(201).json(pub);
+    })
+  );
 
   // ── POST /api/login ──────────────────────────────────────────────────────
 
-  app.post("/api/login", withAsync(async (req, res, next) => {
-    const parsed = loginSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({
-        message: parsed.error.errors[0]?.message ?? "Invalid input",
+  app.post(
+    "/api/login",
+    withAsync(async (req, res, next) => {
+      const parsed = loginSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          message: parsed.error.errors[0]?.message ?? "Invalid input",
+        });
+      }
+
+      const { rememberMe } = parsed.data;
+
+      const authResult = await new Promise<{ user: any; info: any }>(
+        (resolve, reject) => {
+          passport.authenticate("local", (err: any, user: any, info: any) => {
+            if (err) return reject(err);
+            resolve({ user, info });
+          })(req, res, next);
+        }
+      );
+
+      if (!authResult.user) {
+        return res.status(401).json({
+          message: authResult.info?.message ?? "Invalid credentials",
+        });
+      }
+
+      await regenerateSession(req);
+
+      await new Promise<void>((resolve, reject) => {
+        req.login(authResult.user, (loginErr: any) => {
+          if (loginErr) return reject(loginErr);
+          resolve();
+        });
       });
-    }
 
-    const { rememberMe } = parsed.data;
+      req.session.cookie.maxAge = rememberMe ? SESSION_30_DAYS_MS : SESSION_7_DAYS_MS;
+      await saveSession(req);
 
-    const authResult = await new Promise<{ user: any; info: any }>((resolve, reject) => {
-      passport.authenticate("local", (err: any, user: any, info: any) => {
-        if (err) return reject(err);
-        resolve({ user, info });
-      })(req, res, next);
-    });
-
-    if (!authResult.user) {
-      return res.status(401).json({
-        message: authResult.info?.message ?? "Invalid credentials",
-      });
-    }
-
-    await regenerateSession(req);
-
-    await new Promise<void>((resolve, reject) => {
-      req.login(authResult.user, (loginErr: any) => {
-        if (loginErr) return reject(loginErr);
-        resolve();
-      });
-    });
-
-    req.session.cookie.maxAge = rememberMe ? SESSION_30_DAYS_MS : SESSION_7_DAYS_MS;
-    await saveSession(req);
-
-    return res.json(storage.toPublic(authResult.user));
-  }));
+      return res.json(storage.toPublic(authResult.user));
+    })
+  );
 
   // ── POST /api/logout ─────────────────────────────────────────────────────
 
@@ -171,76 +179,91 @@ export async function registerRoutes(
 
   // ── GET /api/rooms/progress ─────────────────────────────────────────────
 
-  app.get("/api/rooms/progress", withAsync(async (req, res) => {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.json({ solvedKeys: [] as string[] });
-    }
+  app.get(
+    "/api/rooms/progress",
+    withAsync(async (req, res) => {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.json({ solvedKeys: [] as string[] });
+      }
 
-    const user = req.user as any;
-    const solved = await storage.getSolvedChallengesByUser(user.id);
-    const solvedKeys = solved.map((entry) => `${entry.roomId}:${entry.challengeId}`);
-    return res.json({ solvedKeys });
-  }));
+      const user = req.user as any;
+      const solved = await storage.getSolvedChallengesByUser(user.id);
+      const solvedKeys = solved.map(
+        (entry) => `${entry.roomId}:${entry.challengeId}`
+      );
+      return res.json({ solvedKeys });
+    })
+  );
 
   // ── GET /api/progress/leaderboard ───────────────────────────────────────
 
-  app.get("/api/progress/leaderboard", withAsync(async (req, res) => {
-    const query = leaderboardQuerySchema.safeParse(req.query);
-    if (!query.success) {
-      return res.status(400).json({ message: "Invalid leaderboard query" });
-    }
+  app.get(
+    "/api/progress/leaderboard",
+    withAsync(async (req, res) => {
+      const query = leaderboardQuerySchema.safeParse(req.query);
+      if (!query.success) {
+        return res.status(400).json({ message: "Invalid leaderboard query" });
+      }
 
-    const topUsers = await storage.getLeaderboard(query.data.limit);
-    const teams = await storage.getTeamProgress();
-    return res.json({ topUsers, teams });
-  }));
+      const topUsers = await storage.getLeaderboard(query.data.limit);
+      const teams = await storage.getTeamProgress();
+      return res.json({ topUsers, teams });
+    })
+  );
 
   // ── GET /api/dashboard ───────────────────────────────────────────────────
 
-  app.get("/api/dashboard", requireAuth, withAsync(async (req, res) => {
-    const query = dashboardQuerySchema.safeParse(req.query);
-    if (!query.success) {
-      return res.status(400).json({ message: "Invalid dashboard query" });
-    }
+  app.get(
+    "/api/dashboard",
+    requireAuth,
+    withAsync(async (req, res) => {
+      const query = dashboardQuerySchema.safeParse(req.query);
+      if (!query.success) {
+        return res.status(400).json({ message: "Invalid dashboard query" });
+      }
 
-    const user = req.user as any;
-    const freshUser = await storage.getUser(user.id);
-    if (!freshUser) return res.status(404).json({ message: "User not found" });
+      const user = req.user as any;
+      const freshUser = await storage.getUser(user.id);
+      if (!freshUser) return res.status(404).json({ message: "User not found" });
 
-    const submissions = await storage.getSubmissionsByUser(freshUser.id, query.data.limit);
-    return res.json({
-      user: storage.toPublic(freshUser),
-      submissions,
-    });
-  }));
+      const submissions = await storage.getSubmissionsByUser(
+        freshUser.id,
+        query.data.limit
+      );
+      return res.json({
+        user: storage.toPublic(freshUser),
+        submissions,
+      });
+    })
+  );
 
   // ── POST /api/submissions ─────────────────────────────────────────────────
 
-  app.post("/api/submissions", requireAuth, withAsync(async (req, res) => {
-    const parsed = submitFlagSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({
-        message: parsed.error.errors[0]?.message ?? "Invalid input",
-      });
-    }
+  app.post(
+    "/api/submissions",
+    requireAuth,
+    withAsync(async (req, res) => {
+      const parsed = submitFlagSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          message: parsed.error.errors[0]?.message ?? "Invalid input",
+        });
+      }
 
-    const user = req.user as any;
-    const meta = getChallengeMeta(parsed.data.roomId, parsed.data.challengeId);
-    if (!meta) {
-      return res.status(400).json({ message: "Unknown challenge" });
-    }
+      const user = req.user as any;
+      const meta = getChallengeMeta(parsed.data.roomId, parsed.data.challengeId);
+      if (!meta) {
+        return res.status(400).json({ message: "Unknown challenge" });
+      }
 
-    if (user.team !== meta.team) {
-      return res.status(403).json({ message: "Challenge is not available for your team" });
-    }
+      if (user.team !== meta.team) {
+        return res
+          .status(403)
+          .json({ message: "Challenge is not available for your team" });
+      }
 
-    const solvedBefore = await storage.getSolvedChallengesByUser(user.id);
-    const alreadySolved = solvedBefore.some(
-      (entry) => entry.roomId === parsed.data.roomId && entry.challengeId === parsed.data.challengeId
-    );
-
-    const submission = await storage.createSubmission(user.id, parsed.data);
-    const xpAwarded = submission.status === "Success" && !alreadySolved;
-    return res.status(201).json({ ...submission, xpAwarded });
-  }));
+      const result = await storage.createSubmission(user, parsed.data);
+      return res.status(201).json(result);
+    })
+  );
 }

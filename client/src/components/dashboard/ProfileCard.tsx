@@ -4,7 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Shield, Trophy, Camera, Crosshair } from "lucide-react";
+import { Shield, Trophy, Camera, Crosshair, KeyRound } from "lucide-react";
 import type { UserSummary } from "./types";
 import { useToast } from "@/hooks/use-toast";
 
@@ -13,6 +13,22 @@ type Props = {
   onUploadPhoto?: () => void;
   onCopyGdgId?: (gdgId: string) => Promise<void> | void;
 };
+
+async function copyText(value: string): Promise<void> {
+  if (navigator?.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+  const ta = document.createElement("textarea");
+  ta.value = value;
+  ta.style.position = "fixed";
+  ta.style.top = "-9999px";
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  document.execCommand("copy");
+  document.body.removeChild(ta);
+}
 
 const teamBadgeClass = (team: UserSummary["team"]) =>
   team === "blue"
@@ -50,23 +66,11 @@ export default function ProfileCard({
 
   const copyIdToClipboard = async () => {
     try {
-      // TODO (backend): If ID copy needs logging/analytics, handle it here.
       if (onCopyGdgId) {
         await onCopyGdgId(user.gdgId);
-      } else if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(user.gdgId);
       } else {
-        const ta = document.createElement("textarea");
-        ta.value = user.gdgId;
-        ta.style.position = "fixed";
-        ta.style.top = "-9999px";
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
+        await copyText(user.gdgId);
       }
-
       toast({
         title: "ID copied",
         description: "Your GDG ID has been copied to clipboard.",
@@ -75,6 +79,22 @@ export default function ProfileCard({
       toast({
         title: "Copy failed",
         description: "Could not copy ID. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const copyTeamIdToClipboard = async () => {
+    try {
+      await copyText(user.teamId);
+      toast({
+        title: "TEAM_ID copied",
+        description: `${user.teamId} is the value substituted into NEXUS{...} flags.`,
+      });
+    } catch {
+      toast({
+        title: "Copy failed",
+        description: "Could not copy TEAM_ID. Please try again.",
         variant: "destructive",
       });
     }
@@ -146,6 +166,23 @@ export default function ProfileCard({
               <p className="mt-2 text-sm text-muted-foreground">
                 {user.description}
               </p>
+
+              <div className="mt-3 inline-flex items-center gap-2 rounded-md border border-cyber-blue/20 bg-cyber-blue/5 px-3 py-2">
+                <KeyRound className="h-4 w-4 text-cyber-blue" />
+                <div className="flex flex-col leading-tight">
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Your TEAM_ID
+                  </span>
+                  <button
+                    type="button"
+                    onClick={copyTeamIdToClipboard}
+                    className="font-mono text-sm font-semibold text-cyber-blue hover:underline"
+                    title="Click to copy. Used inside NEXUS{...} flags."
+                  >
+                    {user.teamId}
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* XP Section */}

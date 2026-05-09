@@ -1,44 +1,33 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { openAuthModal } from "@/lib/openAuthModal";
 import { solvedKey } from "@shared/challengeCatalog";
+import type { RoomContent } from "@shared/content";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import {
-  LucideIcon,
-  Clock,
-  Users,
+  ArrowRight,
   BarChart3,
   CheckCircle2,
-  Circle,
-  Play,
-  ArrowRight,
+  Clock,
+  Users,
   X,
-  Flag,
 } from "lucide-react";
 import red_logo from "./GDGCybersec-Assets/GDG-ascii-red-transparent.png";
 import blue_logo from "./GDGCybersec-Assets/GDG-ascii-blue-transparent.png";
-
-interface Challenge {
-  id: string;
-  title: string;
-  description: string;
-  completed: boolean;
-  points: number;
-}
+import { getRoomBody } from "./rooms";
 
 interface RoomDetailModalProps {
   open: boolean;
@@ -46,28 +35,22 @@ interface RoomDetailModalProps {
   initialTab?: "overview" | "challenges";
   initialChallengeId?: string | null;
   onNavigateChallenge?: (challengeId: string) => void;
-  room: {
-    id: string;
-    title: string;
-    description: string;
-    icon: LucideIcon;
-    difficulty: "Beginner" | "Intermediate" | "Advanced";
-    duration: string;
-    participants: number;
-    tags: string[];
-    team: "blue" | "red";
-    progress?: number;
-    challenges: Challenge[];
-    prerequisites?: string[];
-    objectives?: string[];
-  };
+  /** Pre-computed solved challenge ids (e.g. ["ch-1", "ch-3"]). */
+  solvedChallengeIds: string[];
+  room: RoomContent;
 }
 
 const difficultyColors = {
   Beginner: "bg-primary/10 text-primary border-primary/20",
   Intermediate: "bg-chart-2/10 text-chart-2 border-chart-2/20",
   Advanced: "bg-cyber-red/10 text-cyber-red border-cyber-red/20",
-};
+} as const;
+
+interface SubmissionResponse {
+  status: "Success" | "Fail";
+  xpAwarded: boolean;
+  pointsAwarded: number;
+}
 
 export default function RoomDetailModal({
   open,
@@ -75,27 +58,58 @@ export default function RoomDetailModal({
   initialTab,
   initialChallengeId,
   onNavigateChallenge,
+  solvedChallengeIds,
   room,
 }: RoomDetailModalProps) {
-  const [activeTab, setActiveTab] = useState<"overview" | "challenges">("overview");
-  const [flags, setFlags] = useState<Record<string, string>>({});
-  const [pendingChallengeId, setPendingChallengeId] = useState<string | null>(null);
-  
-  const { isLoggedIn } = useAuth();
+  const [activeTab, setActiveTab] = useState<"overview" | "challenges">(
+    initialTab ?? "overview"
+  );
+  const [flagInputs, setFlagInputs] = useState<Record<string, string>>({});
+  const [pendingChallengeId, setPendingChallengeId] = useState<string | null>(
+    null
+  );
+
+  const { user, isLoggedIn } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
 
   useEffect(() => {
     if (!open) return;
-    if (initialTab) {
-      setActiveTab(initialTab);
-    }
+    if (initialTab) setActiveTab(initialTab);
   }, [initialTab, open]);
 
+  // When the modal closes, drop any half-typed flags from local state.
+  useEffect(() => {
+    if (!open) {
+      setFlagInputs({});
+      setPendingChallengeId(null);
+    }
+  }, [open]);
+
+  const solvedSet = useMemo(
+    () => new Set(solvedChallengeIds),
+    [solvedChallengeIds]
+  );
+
+  const completedChallenges = solvedSet.size;
+  const totalChallenges = room.challenges.length;
+  const totalPoints = room.challenges.reduce((s, c) => s + c.points, 0);
+  const earnedPoints = room.challenges
+    .filter((c) => solvedSet.has(c.id))
+    .reduce((s, c) => s + c.points, 0);
+  const progressPercent =
+    totalChallenges > 0
+      ? Math.round((completedChallenges / totalChallenges) * 100)
+      : 0;
+
   const submitMut = useMutation({
-    mutationFn: async (data: { flag: string; challengeId: string; roomId: string }) => {
+    mutationFn: async (data: {
+      flag: string;
+      challengeId: string;
+      roomId: string;
+    }) => {
       const res = await apiRequest("POST", "/api/submissions", data);
-      return res.json();
+      return res.json() as Promise<SubmissionResponse>;
     },
     onMutate: (variables) => {
       setPendingChallengeId(variables.challengeId);
@@ -103,30 +117,40 @@ export default function RoomDetailModal({
     onSuccess: (data, variables) => {
       qc.invalidateQueries({ queryKey: ["/api/dashboard"] });
       qc.invalidateQueries({ queryKey: ["/api/me"] });
-      qc.setQueryData<{ solvedKeys: string[] }>(["/api/rooms/progress"], (current) => {
-        const key = solvedKey(variables.roomId, variables.challengeId);
-        if (data.status !== "Success") return current ?? { solvedKeys: [] };
-        const existing = new Set(current?.solvedKeys ?? []);
-        existing.add(key);
-        return { solvedKeys: Array.from(existing) };
-      });
+      qc.setQueryData<{ solvedKeys: string[] }>(
+        ["/api/rooms/progress"],
+        (current) => {
+          if (data.status !== "Success") return current ?? { solvedKeys: [] };
+          const key = solvedKey(variables.roomId, variables.challengeId);
+          const existing = new Set(current?.solvedKeys ?? []);
+          existing.add(key);
+          return { solvedKeys: Array.from(existing) };
+        }
+      );
       qc.invalidateQueries({ queryKey: ["/api/rooms/progress"] });
-      setFlags((prev) => ({ ...prev, [variables.challengeId]: "" }));
-      
+      qc.invalidateQueries({ queryKey: ["/api/progress/leaderboard", 10] });
+      setFlagInputs((prev) => ({ ...prev, [variables.challengeId]: "" }));
+
       if (data.status === "Success") {
         toast({
-          title: "Flag accepted! 🎉",
-          description: data.xpAwarded ? "+50 XP awarded." : "Already solved before; no extra XP this time.",
-          variant: "default",
+          title: "Flag accepted",
+          description: data.xpAwarded
+            ? `+${data.pointsAwarded} XP awarded.`
+            : "Already solved before — no extra XP this time.",
         });
       } else {
-        toast({ title: "Incorrect flag", description: "Keep trying!", variant: "destructive" });
+        toast({
+          title: "Incorrect flag",
+          description:
+            "Make sure the flag matches the format NEXUS{...} for your TEAM_ID.",
+          variant: "destructive",
+        });
       }
     },
     onError: () => {
       toast({
         title: "Submission failed",
-        description: "Please try again.",
+        description: "Please try again in a moment.",
         variant: "destructive",
       });
     },
@@ -135,50 +159,63 @@ export default function RoomDetailModal({
     },
   });
 
-  const Icon = room.icon;
-  const completedChallenges = room.challenges.filter((c) => c.completed).length;
-  const totalPoints = room.challenges.reduce((sum, c) => sum + c.points, 0);
-  const earnedPoints = room.challenges
-    .filter((c) => c.completed)
-    .reduce((sum, c) => sum + c.points, 0);
-
   const handleSubmitFlag = (challengeId: string) => {
-    if (!isLoggedIn) {
-      toast({ title: "Please log in", description: "You must be logged in to submit flags.", variant: "destructive" });
-      window.dispatchEvent(new CustomEvent("gdg:auth-open", { detail: { mode: "login" } }));
+    if (!isLoggedIn || !user) {
+      toast({
+        title: "Please log in",
+        description: "You must be logged in to submit flags.",
+        variant: "destructive",
+      });
+      openAuthModal("login", `/rooms/${room.id}/challenges/${challengeId}`);
       return;
     }
-    const flag = flags[challengeId] || "";
-    if (!flag.trim()) return;
-    
-    submitMut.mutate({
-      flag,
-      challengeId,
-      roomId: room.id,
-    });
-    
+    if (user.team !== room.team) {
+      toast({
+        title: `This challenge is ${room.team === "red" ? "Red Team" : "Blue Team"} only`,
+        description:
+          "Switch teams from your profile to access challenges from the other track.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const flag = (flagInputs[challengeId] ?? "").trim();
+    if (!flag) return;
+
+    submitMut.mutate({ flag, challengeId, roomId: room.id });
+  };
+
+  const handleFlagInput = (challengeId: string, value: string) => {
+    setFlagInputs((prev) => ({ ...prev, [challengeId]: value }));
   };
 
   const handlePrimaryAction = () => {
     setActiveTab("challenges");
-    const nextChallenge = room.challenges.find((challenge) => !challenge.completed)?.id;
+    const nextChallenge = room.challenges.find(
+      (challenge) => !solvedSet.has(challenge.id)
+    )?.id;
     if (nextChallenge && onNavigateChallenge) {
       onNavigateChallenge(nextChallenge);
     }
-
     if (!isLoggedIn) {
       toast({
         title: "Create your account",
         description: "Sign up or log in to start submitting flags.",
       });
-      openAuthModal("signup");
+      openAuthModal("signup", `/rooms/${room.id}`);
     }
   };
 
+  const RoomBody = getRoomBody(room.roomCode);
+  const teamId = user?.teamId ?? null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
-
+      <DialogContent
+        className={cn(
+          "p-0 overflow-y-auto max-h-[92vh]",
+          activeTab === "challenges" ? "max-w-4xl" : "max-w-2xl"
+        )}
+      >
         <div
           className={cn(
             "relative h-32 flex items-end p-6",
@@ -187,7 +224,6 @@ export default function RoomDetailModal({
               : "bg-gradient-to-br from-cyber-red/20 to-cyber-red/5"
           )}
         >
-
           <img
             src={room.team === "blue" ? blue_logo : red_logo}
             alt={room.team === "blue" ? "Blue Team" : "Red Team"}
@@ -209,22 +245,20 @@ export default function RoomDetailModal({
           <div className="flex items-center gap-4">
             <div
               className={cn(
-                "w-14 h-14 rounded-md flex items-center justify-center",
-                room.team === "blue" ? "bg-primary/20" : "bg-cyber-red/20"
+                "px-3 py-1 rounded-md text-xs font-mono font-semibold border",
+                room.team === "blue"
+                  ? "bg-primary/20 text-primary border-primary/30"
+                  : "bg-cyber-red/20 text-cyber-red border-cyber-red/30"
               )}
             >
-              <Icon
-                className={cn(
-                  "w-7 h-7",
-                  room.team === "blue" ? "text-primary" : "text-cyber-red"
-                )}
-              />
+              {room.roomCode}
             </div>
             <div>
               <DialogTitle className="text-xl font-display font-bold text-foreground">
                 {room.title}
               </DialogTitle>
               <DialogDescription className="text-muted-foreground">
+                Session {room.session} ·{" "}
                 {room.team === "blue" ? "Defense Track" : "Offense Track"}
               </DialogDescription>
             </div>
@@ -246,27 +280,34 @@ export default function RoomDetailModal({
             </span>
             <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <BarChart3 className="w-4 h-4" />
-              {earnedPoints}/{totalPoints} points
+              {earnedPoints}/{totalPoints} XP
             </span>
+            {teamId && (
+              <Badge
+                variant="outline"
+                className="font-mono text-xs"
+                title="Your TEAM_ID is substituted into NEXUS flags"
+              >
+                {teamId}
+              </Badge>
+            )}
           </div>
 
-          {room.progress !== undefined && (
-            <div className="mb-6">
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span className="text-muted-foreground">Your Progress</span>
-                <span className="font-medium text-foreground">
-                  {completedChallenges}/{room.challenges.length} challenges
-                </span>
-              </div>
-              <Progress
-                value={room.progress}
-                className={cn(
-                  "h-2",
-                  room.team === "blue" ? "[&>div]:bg-primary" : "[&>div]:bg-cyber-red"
-                )}
-              />
+          <div className="mb-6">
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span className="text-muted-foreground">Your progress</span>
+              <span className="font-medium text-foreground">
+                {completedChallenges}/{totalChallenges} challenges
+              </span>
             </div>
-          )}
+            <Progress
+              value={progressPercent}
+              className={cn(
+                "h-2",
+                room.team === "blue" ? "[&>div]:bg-primary" : "[&>div]:bg-cyber-red"
+              )}
+            />
+          </div>
 
           <div className="flex gap-2 mb-6 border-b border-border">
             <button
@@ -297,7 +338,7 @@ export default function RoomDetailModal({
               )}
               data-testid="tab-challenges"
             >
-              Challenges ({room.challenges.length})
+              Challenges ({totalChallenges})
             </button>
           </div>
 
@@ -308,13 +349,13 @@ export default function RoomDetailModal({
                 <p className="text-muted-foreground">{room.description}</p>
               </div>
 
-              {room.objectives && room.objectives.length > 0 && (
+              {room.learningObjectives.length > 0 && (
                 <div>
                   <h3 className="font-semibold text-foreground mb-3">
                     Learning Objectives
                   </h3>
                   <ul className="space-y-2">
-                    {room.objectives.map((obj, i) => (
+                    {room.learningObjectives.map((obj, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm">
                         <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                         <span className="text-muted-foreground">{obj}</span>
@@ -324,7 +365,7 @@ export default function RoomDetailModal({
                 </div>
               )}
 
-              {room.prerequisites && room.prerequisites.length > 0 && (
+              {room.prerequisites.length > 0 && (
                 <div>
                   <h3 className="font-semibold text-foreground mb-3">Prerequisites</h3>
                   <div className="flex flex-wrap gap-2">
@@ -349,78 +390,15 @@ export default function RoomDetailModal({
               </div>
             </div>
           ) : (
-            <div className="space-y-3">
-              {room.challenges.map((challenge, index) => (
-                <div
-                  key={challenge.id}
-                  className={cn(
-                    "p-4 rounded-md border transition-colors",
-                    initialChallengeId === challenge.id && "ring-1 ring-primary/60",
-                    challenge.completed
-                      ? "bg-muted/30 border-border/50"
-                      : "bg-card border-border hover:border-primary/30"
-                  )}
-                  data-testid={`challenge-${challenge.id}`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={cn(
-                          "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
-                          challenge.completed
-                            ? "bg-primary/10 text-primary"
-                            : "bg-muted text-muted-foreground"
-                        )}
-                      >
-                        {challenge.completed ? (
-                          <CheckCircle2 className="w-4 h-4" />
-                        ) : (
-                          <span className="text-xs font-medium">{index + 1}</span>
-                        )}
-                      </div>
-                      <div>
-                        <h4
-                          className={cn(
-                            "font-medium",
-                            challenge.completed
-                              ? "text-muted-foreground line-through"
-                              : "text-foreground"
-                          )}
-                        >
-                          {challenge.title}
-                        </h4>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {challenge.description}
-                        </p>
-                        <span className="text-xs text-muted-foreground mt-2 inline-block">
-                          {challenge.points} points
-                        </span>
-                      </div>
-                    </div>
-
-                      <div className="flex gap-2 items-center flex-shrink-0">
-                        <Input 
-                          placeholder="FLAG{...}" 
-                          className="h-8 text-xs w-32"
-                          value={flags[challenge.id] || ""}
-                          onChange={(e) => setFlags(prev => ({ ...prev, [challenge.id]: e.target.value }))}
-                          onKeyDown={(e) => e.key === 'Enter' && handleSubmitFlag(challenge.id)}
-                        />
-                        <Button
-                          size="sm"
-                          variant={room.team === "blue" ? "default" : "destructive"}
-                          className="h-8 gap-1"
-                          onClick={() => handleSubmitFlag(challenge.id)}
-                          disabled={pendingChallengeId === challenge.id}
-                        >
-                          <Flag className="w-3 h-3" />
-                          {pendingChallengeId === challenge.id ? "Submitting..." : "Submit"}
-                        </Button>
-                      </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <RoomBody
+              room={room}
+              teamId={teamId}
+              solvedChallengeIds={solvedSet}
+              pendingChallengeId={pendingChallengeId}
+              flagInputs={flagInputs}
+              onFlagInput={handleFlagInput}
+              onSubmitFlag={handleSubmitFlag}
+            />
           )}
 
           <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-border/50">
@@ -433,7 +411,7 @@ export default function RoomDetailModal({
               data-testid="button-continue-room"
               onClick={handlePrimaryAction}
             >
-              {room.progress ? "Continue Room" : "Start Room"}
+              {completedChallenges > 0 ? "Continue Room" : "Start Room"}
               <ArrowRight className="w-4 h-4" />
             </Button>
           </div>

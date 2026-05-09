@@ -16,6 +16,8 @@ export interface RoomCardProps {
   tags: string[];
   team: "blue" | "red";
   progress?: number;
+  /** PDF code badge, e.g. "RED-1" or "BLUE-3". Optional. */
+  roomCode?: string;
   delay?: number;
   onJoin?: (id: string) => void;
 }
@@ -52,6 +54,7 @@ export default function RoomCard({
   tags,
   team,
   progress,
+  roomCode,
   delay = 0,
   onJoin,
 }: RoomCardProps) {
@@ -94,12 +97,26 @@ export default function RoomCard({
             <Icon className={cn("w-6 h-6", colors.text)} />
           </div>
 
-          <Badge
-            variant="outline"
-            className={cn("text-xs", difficultyColors[difficulty])}
-          >
-            {difficulty}
-          </Badge>
+          <div className="flex flex-col items-end gap-1.5">
+            {roomCode && (
+              <span
+                className={cn(
+                  "px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold border",
+                  team === "blue"
+                    ? "bg-primary/10 text-primary border-primary/30"
+                    : "bg-cyber-red/10 text-cyber-red border-cyber-red/30"
+                )}
+              >
+                {roomCode}
+              </span>
+            )}
+            <Badge
+              variant="outline"
+              className={cn("text-xs", difficultyColors[difficulty])}
+            >
+              {difficulty}
+            </Badge>
+          </div>
         </div>
 
         <h3 className="font-display text-lg font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">

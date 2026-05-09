@@ -1,110 +1,161 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Database, Trophy, Info, ExternalLink, CheckCircle2, Terminal, BookOpen } from "lucide-react";
+import RoomLab, { Bullets, InlineCode, PayloadBlock } from "./RoomLab";
+import type { RoomBodyProps, RoomLessonMap } from "./types";
 
-export default function Red2({ onExit }: { onExit: () => void }) {
-  const [flag, setFlag] = useState("");
+const RED_2_LESSONS: RoomLessonMap = {
+  "ch-1": {
+    objective:
+      "Bypass file-upload validation to land an executable payload on the server.",
+    background: (
+      <p>
+        File-upload bugs come in three flavours: client-side checks only,
+        weak content-type validation, and trust in the file extension. The fix
+        is server-side magic-byte validation plus rendering uploads with a
+        non-executing content type.
+      </p>
+    ),
+    steps: [
+      {
+        title: "Map the upload form",
+        body: (
+          <p>
+            Inspect the upload request in DevTools. Note the validations the
+            client applies (e.g. <InlineCode>accept=&quot;.png,.jpg&quot;</InlineCode>) and
+            which header(s) the server inspects.
+          </p>
+        ),
+      },
+      {
+        title: "Bypass the filter",
+        body: (
+          <>
+            <p>Try renaming an executable payload:</p>
+            <PayloadBlock>{`payload.php.png\nContent-Type: image/png`}</PayloadBlock>
+            <p>
+              If the server stores the file under its original name and serves
+              it back, request the path directly to confirm execution.
+            </p>
+          </>
+        ),
+      },
+      {
+        title: "Capture the flag",
+        body: (
+          <p>
+            Submit <InlineCode>{`NEXUS{FILE_UPLOAD_<TEAM_ID>}`}</InlineCode> once you've
+            demonstrated arbitrary file storage.
+          </p>
+        ),
+      },
+    ],
+    verification: [
+      "Identified the validation that was bypassed",
+      "Successfully stored a non-image file via the upload form",
+      "Documented remediation (server-side magic bytes + sanitised filename)",
+    ],
+  },
+  "ch-2": {
+    objective:
+      "Coerce the server into making an HTTP request to an internal-only resource.",
+    background: (
+      <p>
+        SSRF abuses a feature: code that fetches a URL on behalf of the user.
+        On cloud platforms the most common target is the metadata service{" "}
+        <InlineCode>169.254.169.254</InlineCode>; on internal networks it is
+        admin panels reachable only to the server.
+      </p>
+    ),
+    steps: [
+      {
+        title: "Find a URL fetcher",
+        body: (
+          <Bullets
+            items={[
+              <>Look for "import from URL", webhook, or avatar-from-URL features.</>,
+              <>Trigger one using a benign URL you control to confirm fetch behaviour.</>,
+            ]}
+          />
+        ),
+      },
+      {
+        title: "Pivot inwards",
+        body: (
+          <>
+            <p>Swap the target for an internal address:</p>
+            <PayloadBlock>{`http://127.0.0.1:8080/admin\nhttp://169.254.169.254/latest/meta-data/`}</PayloadBlock>
+            <p>
+              Document the response and reason about what data is exposed.
+            </p>
+          </>
+        ),
+      },
+      {
+        title: "Capture the flag",
+        body: (
+          <p>
+            Submit <InlineCode>{`NEXUS{SSRF_<TEAM_ID>}`}</InlineCode> once internal
+            access is demonstrated.
+          </p>
+        ),
+      },
+    ],
+    verification: [
+      "Identified the URL-fetching feature",
+      "Reached an internal address through the server",
+      "Documented blast radius for the bug",
+    ],
+  },
+  "ch-3": {
+    objective:
+      "Find an Insecure Direct Object Reference and access another user's resource.",
+    background: (
+      <p>
+        IDOR happens when authorisation isn't checked per object. If a request
+        like <InlineCode>GET /api/orders/42</InlineCode> returns the order
+        regardless of who owns it, you have IDOR.
+      </p>
+    ),
+    steps: [
+      {
+        title: "Inventory references",
+        body: (
+          <p>
+            Browse the app and note every numeric/UUID reference in URLs and
+            response bodies. Pay special attention to user-scoped resources
+            (orders, profile pages, attachments).
+          </p>
+        ),
+      },
+      {
+        title: "Tamper with the reference",
+        body: (
+          <>
+            <p>
+              Replace your own object id with another value. Watch for{" "}
+              <InlineCode>200</InlineCode> responses where you'd expect{" "}
+              <InlineCode>403</InlineCode>.
+            </p>
+            <PayloadBlock>{`GET /api/v1/orders/41\nGET /api/v1/orders/42\nGET /api/v1/orders/43`}</PayloadBlock>
+          </>
+        ),
+      },
+      {
+        title: "Capture the flag",
+        body: (
+          <p>
+            Once you've demonstrated cross-tenant data access, submit{" "}
+            <InlineCode>{`NEXUS{IDOR_<TEAM_ID>}`}</InlineCode>.
+          </p>
+        ),
+      },
+    ],
+    verification: [
+      "Identified an unauthenticated/cross-user object reference",
+      "Retrieved another user's data without their session",
+      "Documented the missing authorisation check",
+    ],
+  },
+};
 
-  return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-300">
-      <div className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex justify-between shrink-0">
-        <div className="flex gap-3 items-center">
-          <Database className="text-red-500" />
-          <div>
-            <h2 className="text-xl font-bold text-white">RED-2: SQLi Data Extraction</h2>
-            <span className="text-xs text-red-400 font-mono">Challenge 2</span>
-          </div>
-        </div>
-        <Button variant="outline" size="sm" onClick={onExit} className="border-slate-700 text-slate-400 hover:bg-slate-800">Exit</Button>
-      </div>
-
-      <div className="flex flex-col md:flex-row flex-1 min-h-0">
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          
-          <section className="bg-slate-900 p-6 rounded-xl border border-slate-800">
-            <h3 className="font-bold text-white mb-2 flex gap-2"><Info className="text-red-500"/> Objective</h3>
-            <p className="text-sm leading-relaxed">Use UNION-based SQL injection to extract hidden data from the database.</p>
-          </section>
-
-          <section className="bg-slate-900 p-6 rounded-xl border border-slate-800">
-            <h3 className="font-bold text-white mb-2 flex gap-2"><BookOpen className="text-red-500"/> Background</h3>
-            <p className="text-sm">UNION-based SQL injection allows combining results from multiple SELECT statements, enabling data extraction from other database tables.</p>
-          </section>
-
-          <section className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-            <h3 className="font-bold text-white mb-4 flex gap-2"><Terminal className="text-red-500"/> Detailed Instructions</h3>
-            <div className="space-y-6 text-sm">
-              <div className="p-4 bg-slate-950 rounded border border-slate-800">
-                <strong className="text-white block mb-2">Step 1: Find Search Function</strong>
-                <ul className="list-disc pl-5 space-y-1 text-slate-400">
-                  <li>Locate the search bar (top right).</li>
-                  <li>Try a normal search: `apple`.</li>
-                </ul>
-                <Button className="mt-3 bg-red-600 hover:bg-red-700 text-white h-8 text-xs" onClick={() => window.open('https://juice-shop.herokuapp.com', '_blank')}>
-                   <ExternalLink className="w-3 h-3 mr-2" /> Open Target
-                </Button>
-              </div>
-
-              <div className="p-4 bg-slate-950 rounded border border-slate-800">
-                <strong className="text-white block mb-2">Step 2: Test for SQL Injection</strong>
-                <p className="mb-2">Enter `apple' OR 1=1--`. If vulnerable, you'll see all products instead of just apple-related ones.</p>
-              </div>
-
-              <div className="p-4 bg-slate-950 rounded border border-slate-800">
-                <strong className="text-white block mb-2">Step 3: Determine Column Count</strong>
-                <p className="mb-2">We need to determine the number of columns. For Juice Shop, you need 9 columns.</p>
-              </div>
-
-              <div className="p-4 bg-slate-950 rounded border border-slate-800">
-                <strong className="text-white block mb-2">Step 4: Extract User Emails</strong>
-                <p className="mb-2">Inject the following payload to combine results with the Users table:</p>
-                <code className="block bg-black text-green-400 p-3 rounded border-l-2 border-red-500 font-mono text-xs break-all">
-                  apple' UNION SELECT NULL, email, password, NULL, NULL, NULL, NULL, NULL, NULL FROM Users--
-                </code>
-              </div>
-
-              <div className="p-4 bg-slate-950 rounded border border-slate-800">
-                <strong className="text-white block mb-2">Step 5: Count Extracted Users</strong>
-                <p>Scroll down to see "fake products" containing user emails and password hashes. Count how many unique user emails you see (typically 15-20).</p>
-              </div>
-            </div>
-          </section>
-
-          <section className="bg-green-900/10 border border-green-900/30 rounded-xl p-6">
-             <h3 className="font-bold text-green-400 mb-4 flex gap-2"><CheckCircle2 className="text-green-500"/> Verification Checklist</h3>
-             <ul className="space-y-2 text-sm text-slate-300">
-               {[
-                 "Successfully identified column count (9 columns)",
-                 "Extracted user emails using UNION SELECT",
-                 "Counted total number of users",
-                 "Submitted flag with correct user count"
-               ].map((item, i) => (
-                 <li key={i} className="flex gap-2 items-start">
-                   <span className="text-green-500 mt-0.5">G£ô</span> {item}
-                 </li>
-               ))}
-             </ul>
-          </section>
-          
-          <div className="h-10"></div>
-        </div>
-
-        <div className="w-full md:w-80 bg-slate-900 border-l border-slate-800 p-6 overflow-y-auto">
-           <div className="bg-black p-4 rounded-xl text-center border border-slate-800 mb-6">
-             <Trophy className="w-6 h-6 text-yellow-500 mx-auto mb-2"/>
-             <h3 className="font-bold text-white">Submission</h3>
-           </div>
-           
-           <div className="space-y-4">
-             <Label className="text-red-500 font-bold text-xs uppercase">Enter Flag</Label>
-             <Input value={flag} onChange={(e) => setFlag(e.target.value)} className="bg-slate-950 border-slate-700 text-white font-mono mt-2" placeholder="NEXUS{...}" />
-             <Button className="w-full bg-red-600 hover:bg-red-700 text-white">Validate Flag</Button>
-             <p className="text-xs text-slate-500 text-center">Format: NEXUS&#123;SQLI_UNION_17&#125;</p>
-           </div>
-        </div>
-      </div>
-    </div>
-  );
+export default function Red2Body(props: RoomBodyProps) {
+  return <RoomLab {...props} lessons={RED_2_LESSONS} />;
 }

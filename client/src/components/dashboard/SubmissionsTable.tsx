@@ -1,6 +1,13 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Flag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Submission } from "./types";
@@ -26,14 +33,25 @@ function StatusPill({ status }: { status: "Success" | "Fail" }) {
   );
 }
 
-export default function SubmissionsTable({ submissions, searchValue, onSearchChange }: Props) {
+function formatTime(iso?: string): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString();
+}
+
+export default function SubmissionsTable({
+  submissions,
+  searchValue,
+  onSearchChange,
+}: Props) {
   const q = searchValue.trim().toLowerCase();
   const filtered = submissions.filter((s) => {
     if (!q) return true;
     return (
-      s.flag.toLowerCase().includes(q) ||
       s.status.toLowerCase().includes(q) ||
-      s.roomName.toLowerCase().includes(q)
+      s.roomName.toLowerCase().includes(q) ||
+      (s.roomCode ?? "").toLowerCase().includes(q)
     );
   });
 
@@ -55,32 +73,38 @@ export default function SubmissionsTable({ submissions, searchValue, onSearchCha
               <Input
                 value={searchValue}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Search submissions…"
+                placeholder="Search by room or status…"
               />
             </div>
           </div>
 
           {filtered.length === 0 ? (
             <div className="rounded-2xl border border-border/50 p-6 text-sm text-muted-foreground">
-              No submissions found.
+              No submissions yet — head over to the Rooms page and try a flag.
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[40%]">Flag</TableHead>
-                  <TableHead className="w-[25%]">Result</TableHead>
-                  <TableHead className="w-[35%]">Room</TableHead>
+                  <TableHead className="w-[20%]">Result</TableHead>
+                  <TableHead className="w-[40%]">Room</TableHead>
+                  <TableHead className="w-[20%]">Code</TableHead>
+                  <TableHead className="w-[20%]">When</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((s) => (
                   <TableRow key={s.id} className="hover:bg-muted/30">
-                    <TableCell className="font-medium">{s.flag}</TableCell>
                     <TableCell>
                       <StatusPill status={s.status} />
                     </TableCell>
                     <TableCell className="text-sm">{s.roomName}</TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">
+                      {s.roomCode ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {formatTime(s.submittedAt)}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
