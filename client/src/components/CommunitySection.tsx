@@ -1,11 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { Users, Calendar, CheckCircle2, ArrowRight } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { openAuthModal } from "@/lib/openAuthModal";
 
 const howItWorks = [
-  "Join via email or your local chapter.",
+  "Join via email — your chapter admins can point you to Discord and events.",
   "Attend monthly workshops and live labs.",
-  "Complete rooms and share progress with your chapter.",
+  "After sign-in, open the training labs and track XP on your dashboard.",
   "Collaborate on blue-team and red-team study paths.",
 ];
 
@@ -13,28 +15,29 @@ const cards = [
   {
     icon: Users,
     title: "Chapters & Meetups",
-    description: "Campus chapters and local meetups on labs, talks, and CTF practice nights.",
+    description: "Campus chapters and meetups on labs, talks, and CTF practice nights.",
   },
   {
     icon: Calendar,
     title: "Workshops & Events",
-    description: "Regular workshops on threat hunting, web exploitation, and incident response.",
+    description: "Workshops on threat hunting, web exploitation, and incident response.",
   },
 ];
 
 export default function CommunitySection() {
+  const { isLoggedIn } = useAuth();
+
   return (
     <section className="py-16 md:py-24 bg-card/30" data-testid="community-section">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
           <div className="opacity-0 animate-slide-up" style={{ animationDelay: "0.1s" }}>
             <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-4">
-              Cybersecurity GDG Department
+              Cybersecurity · GDG PUP
             </h2>
             <p className="text-base text-muted-foreground mb-6">
-              A community-led initiative focused on hands-on security learning.
-              Join chapters, attend workshops, and collaborate on blue-team and
-              red-team practice.
+              A hands-on pillar of Google Developer Groups on Campus at PUP. Learn with
+              the chapter—then jump into gated labs once you&apos;re logged in.
             </p>
 
             <div className="grid sm:grid-cols-2 gap-4 mb-6">
@@ -50,9 +53,7 @@ export default function CommunitySection() {
                   <h3 className="font-display font-semibold text-sm text-foreground mb-1">
                     {card.title}
                   </h3>
-                  <p className="text-xs text-muted-foreground">
-                    {card.description}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{card.description}</p>
                 </div>
               ))}
             </div>
@@ -60,15 +61,24 @@ export default function CommunitySection() {
             <div className="flex flex-wrap gap-3">
               <Link href="/community">
                 <Button size="sm" className="gap-1.5" data-testid="button-join-department">
-                  Join the department
+                  Community Hub
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Button>
               </Link>
-              <Link href="/rooms">
-                <Button variant="outline" size="sm" data-testid="button-browse-rooms">
-                  Browse rooms
+              {isLoggedIn ? (
+                <Button variant="outline" size="sm" asChild data-testid="button-browse-rooms">
+                  <Link href="/rooms">Open labs</Link>
                 </Button>
-              </Link>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  data-testid="button-browse-rooms"
+                  onClick={() => openAuthModal("login", "/rooms")}
+                >
+                  Sign in for labs
+                </Button>
+              )}
             </div>
           </div>
 

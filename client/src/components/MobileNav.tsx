@@ -1,19 +1,43 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Home, BookOpen, Users, LayoutGrid } from "lucide-react";
-
-const navItems = [
-  { icon: Home, label: "Home", href: "/" },
-  { icon: BookOpen, label: "Rooms", href: "/rooms" },
-  { icon: Users, label: "Community", href: "/community" },
-  { icon: LayoutGrid, label: "Progress", href: "/dashboard" },
-];
+import { useAuth } from "@/hooks/useAuth";
+import { openAuthModal } from "@/lib/openAuthModal";
 
 export default function MobileNav() {
   const [location] = useLocation();
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const { isLoggedIn } = useAuth();
+
+  type Item =
+    | { key: string; icon: typeof Home; label: string; href: string }
+    | { key: string; icon: typeof Home; label: string; requiresAuthFor: string };
+
+  const navItems: Item[] = useMemo(() => {
+    const items: Item[] = [
+      { key: "home", icon: Home, label: "Home", href: "/" },
+      isLoggedIn
+        ? { key: "labs", icon: BookOpen, label: "Labs", href: "/rooms" }
+        : {
+            key: "labs",
+            icon: BookOpen,
+            label: "Labs",
+            requiresAuthFor: "/rooms",
+          },
+      { key: "community", icon: Users, label: "Community", href: "/community" },
+    ];
+    if (isLoggedIn) {
+      items.push({
+        key: "progress",
+        icon: LayoutGrid,
+        label: "Progress",
+        href: "/dashboard",
+      });
+    }
+    return items;
+  }, [isLoggedIn]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,6 +50,15 @@ export default function MobileNav() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
+  const isActivePath = (href: string) =>
+    href === "/" ? location === "/" : location.startsWith(href);
+
+  const itemClass = (active: boolean) =>
+    cn(
+      "flex flex-col items-center gap-1 p-2 rounded-md min-w-[52px] transition-colors",
+      active ? "text-primary" : "text-muted-foreground active:text-foreground"
+    );
+
   return (
     <nav
       className={cn(
@@ -34,23 +67,39 @@ export default function MobileNav() {
       )}
       data-testid="mobile-nav"
     >
-      <div className="flex items-center justify-around py-2 px-4 safe-area-inset-bottom">
+      <div className="flex items-center justify-around py-2 px-2 safe-area-inset-bottom">
         {navItems.map((item) => {
-          const isActive = location === item.href;
-          return (
-            <Link key={item.href} href={item.href}>
+          const Icon = item.icon;
+          if ("requiresAuthFor" in item) {
+            return (
               <button
-                className={cn(
-                  "flex flex-col items-center gap-1 p-2 rounded-md min-w-[56px] transition-colors",
-                  isActive
-                    ? "text-primary"
-                    : "text-muted-foreground active:text-foreground"
-                )}
+                key={item.key}
+                type="button"
+                className={itemClass(false)}
                 data-testid={`mobile-nav-${item.label.toLowerCase()}`}
+                onClick={() => openAuthModal("login", item.requiresAuthFor)}
               >
-                <item.icon className={cn("w-5 h-5", isActive && "text-primary")} />
-                <span className="text-[10px] font-medium">{item.label}</span>
+                <Icon className="w-5 h-5" />
+                <span className="text-[10px] font-medium leading-tight text-center">
+                  {item.label}
+                </span>
               </button>
+            );
+          }
+
+          const active = isActivePath(item.href);
+
+          return (
+            <Link
+              key={item.key}
+              href={item.href}
+              className={itemClass(active)}
+              data-testid={`mobile-nav-${item.label.toLowerCase()}`}
+            >
+              <Icon className={cn("w-5 h-5", active && "text-primary")} />
+              <span className="text-[10px] font-medium leading-tight text-center">
+                {item.label}
+              </span>
             </Link>
           );
         })}

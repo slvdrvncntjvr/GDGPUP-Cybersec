@@ -36,9 +36,9 @@ const features = [
   },
   {
     icon: Terminal,
-    title: "Same flag format everywhere",
+    title: "Tracked progress",
     description:
-      "Submit NEXUS-style flags bound to your TEAM_ID so scores stay fair per learner.",
+      "Earn XP as you complete challenges—leaderboards reflect how the chapter is leveling up together.",
     iconColor: "text-cyber-blue",
     iconBgColor: "bg-cyber-blue/10",
   },

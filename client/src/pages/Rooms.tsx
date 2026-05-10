@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useRoute } from "wouter";
 import Navbar from "@/components/Navbar";
@@ -34,6 +34,8 @@ import {
 import type { LucideIcon } from "lucide-react";
 import type { RoomCode } from "@shared/challengeCatalog";
 import type { RoomContent, RoomsContentResponse } from "@shared/content";
+import { useAuth } from "@/hooks/useAuth";
+import { openAuthModal } from "@/lib/openAuthModal";
 
 type TeamFilter = "all" | "blue" | "red";
 type DifficultyFilter = "all" | "Beginner" | "Intermediate" | "Advanced";
@@ -69,11 +71,29 @@ interface RoomCardModel {
 }
 
 export default function Rooms() {
+  const { user, isLoading: authLoading } = useAuth();
+  const [path, setLocation] = useLocation();
+  const authGateRef = useRef(false);
   const [teamFilter, setTeamFilter] = useState<TeamFilter>("all");
   const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (user) {
+      authGateRef.current = false;
+      return;
+    }
+    if (!authGateRef.current) {
+      authGateRef.current = true;
+      openAuthModal("login", path || "/rooms");
+      setLocation("/");
+    }
+  }, [authLoading, user, path, setLocation]);
+
+  const labsAccessible = Boolean(user && !authLoading);
+
   const [roomOnlyMatch, roomOnlyParams] = useRoute<{ roomId: string }>(
     "/rooms/:roomId"
   );
@@ -94,6 +114,7 @@ export default function Rooms() {
         }
         return res.json() as Promise<RoomsContentResponse>;
       },
+      enabled: labsAccessible,
     });
 
   const { data: progressData } = useQuery<RoomsProgressResponse>({
@@ -104,6 +125,7 @@ export default function Rooms() {
       return res.json() as Promise<RoomsProgressResponse>;
     },
     retry: false,
+    enabled: labsAccessible,
   });
 
   const allRooms = useMemo<RoomContent[]>(
@@ -162,10 +184,11 @@ export default function Rooms() {
   }, [selectedRoom, solvedKeys]);
 
   useEffect(() => {
+    if (!labsAccessible) return;
     if (routeRoomId && !selectedRoom && !isLoadingRooms) {
       setLocation("/rooms");
     }
-  }, [routeRoomId, selectedRoom, setLocation, isLoadingRooms]);
+  }, [labsAccessible, routeRoomId, selectedRoom, setLocation, isLoadingRooms]);
 
   const openRoom = (roomId: string) => {
     setLocation(`/rooms/${roomId}`);
@@ -212,6 +235,32 @@ export default function Rooms() {
     setDifficultyFilter("all");
     setSearchQuery("");
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="pt-28 pb-28 flex items-center justify-center min-h-[40vh]">
+          <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </main>
+        <Footer />
+        <MobileNav />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="pt-28 pb-28 px-6 text-center text-muted-foreground text-sm max-w-md mx-auto">
+          Opening sign-in so you can reach the labs…
+        </main>
+        <Footer />
+        <MobileNav />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

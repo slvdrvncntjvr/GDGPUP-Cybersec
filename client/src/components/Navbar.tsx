@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Shield, LayoutGrid, LogOut, Crosshair } from "lucide-react";
+import { Menu, Shield, LayoutGrid, LogOut, Crosshair, BookOpen } from "lucide-react";
+import { openAuthModal } from "@/lib/openAuthModal";
 import AuthModal from "./AuthModal";
 import {
   DropdownMenu,
@@ -20,11 +21,7 @@ interface NavLink {
   href: string;
 }
 
-const baseNavLinks: NavLink[] = [
-  { label: "Rooms", href: "/rooms" },
-  { label: "Community Hub", href: "/community" },
-];
-
+const baseNavGuest: NavLink[] = [{ label: "Community Hub", href: "/community" }];
 export default function Navbar() {
   const [location] = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -91,9 +88,9 @@ export default function Navbar() {
       : "text-[hsl(var(--cyber-blue))]";
 
   const desktopLinks: NavLink[] = useMemo(() => {
-    if (!isLoggedIn) return baseNavLinks;
+    if (!isLoggedIn) return baseNavGuest;
     return [
-      { label: "Rooms", href: "/rooms" },
+      { label: "Labs", href: "/rooms" },
       { label: "My Progress", href: "/dashboard" },
       { label: "Community Hub", href: "/community" },
     ];
@@ -245,14 +242,29 @@ export default function Navbar() {
                     )}
 
                     <div className="flex flex-col gap-1">
-                      <Link href="/rooms" onClick={() => setIsMobileOpen(false)}>
+                      {isLoggedIn ? (
+                        <Link href="/rooms" onClick={() => setIsMobileOpen(false)}>
+                          <Button
+                            variant="ghost"
+                            className={`w-full justify-start gap-2 ${location.startsWith("/rooms") ? "bg-accent" : ""}`}
+                          >
+                            <BookOpen className="w-4 h-4" />
+                            Labs
+                          </Button>
+                        </Link>
+                      ) : (
                         <Button
                           variant="ghost"
-                          className={`w-full justify-start ${location === "/rooms" ? "bg-accent" : ""}`}
+                          className="w-full justify-start gap-2"
+                          onClick={() => {
+                            setIsMobileOpen(false);
+                            openAuthModal("login", "/rooms");
+                          }}
                         >
-                          Rooms
+                          <BookOpen className="w-4 h-4" />
+                          Labs · sign in
                         </Button>
-                      </Link>
+                      )}
 
                       {isLoggedIn && (
                         <Link href="/dashboard" onClick={() => setIsMobileOpen(false)}>
