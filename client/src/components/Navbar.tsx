@@ -3,6 +3,8 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Shield, LayoutGrid, LogOut, Crosshair, BookOpen } from "lucide-react";
+
+const GDG_CHAPTER_LOGO = "/branding/gdg-logo.jpg";
 import { openAuthModal } from "@/lib/openAuthModal";
 import AuthModal from "./AuthModal";
 import {
@@ -111,10 +113,15 @@ export default function Navbar() {
             <Link href="/" data-testid="link-home">
               <div className="flex items-center gap-3 group cursor-pointer">
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center border border-primary/20 group-hover:border-primary/40 transition-colors">
-                    <Shield className="w-5 h-5 text-primary" />
+                  <div className="w-10 h-10 rounded-md bg-black/40 flex items-center justify-center border border-primary/25 overflow-hidden shadow-inner shadow-black/40 group-hover:border-primary/50 transition-all duration-300 group-hover:scale-[1.02]">
+                    <img
+                      src={GDG_CHAPTER_LOGO}
+                      alt="Google Developer Groups"
+                      className="h-[78%] w-[78%] object-contain select-none pointer-events-none"
+                      draggable={false}
+                    />
                   </div>
-                  <div className="absolute inset-0 rounded-md bg-primary/20 blur-xl opacity-0 group-hover:opacity-50 transition-opacity" />
+                  <div className="absolute inset-0 rounded-md bg-primary/25 blur-xl opacity-0 group-hover:opacity-60 transition-opacity -z-10" />
                 </div>
                 <div className="flex flex-col">
                   <span className="font-display font-semibold text-sm md:text-base text-foreground">
@@ -221,8 +228,13 @@ export default function Navbar() {
                 <SheetContent side="right" className="w-80 bg-card">
                   <div className="flex flex-col gap-6 mt-8">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center border border-primary/20">
-                        <Shield className="w-5 h-5 text-primary" />
+                      <div className="w-10 h-10 rounded-md bg-black/40 flex items-center justify-center border border-primary/25 overflow-hidden">
+                        <img
+                          src={GDG_CHAPTER_LOGO}
+                          alt=""
+                          className="h-[78%] w-[78%] object-contain"
+                          draggable={false}
+                        />
                       </div>
                       <span className="font-display font-semibold">Cybersecurity · GDG PUP</span>
                     </div>

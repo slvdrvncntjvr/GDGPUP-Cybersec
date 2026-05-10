@@ -134,6 +134,22 @@ export default {
           "0%, 100%": { boxShadow: "0 0 20px 0 hsl(var(--primary) / 0.3)" },
           "50%": { boxShadow: "0 0 40px 5px hsl(var(--primary) / 0.5)" },
         },
+        "hero-drift-1": {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "50%": { transform: "translate(3%, -4%) scale(1.06)" },
+        },
+        "hero-drift-2": {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "50%": { transform: "translate(-4%, 3%) scale(1.08)" },
+        },
+        "hero-drift-3": {
+          "0%, 100%": { transform: "translate(0, 0) rotate(0deg)" },
+          "50%": { transform: "translate(2%, 2%) rotate(-2deg)" },
+        },
+        "slow-pulse": {
+          "0%, 100%": { opacity: "0.5" },
+          "50%": { opacity: "0.85" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -146,6 +162,10 @@ export default {
         "scale-in": "scale-in 0.3s ease-out forwards",
         "shimmer": "shimmer 2s linear infinite",
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
+        "hero-drift-1": "hero-drift-1 22s ease-in-out infinite",
+        "hero-drift-2": "hero-drift-2 28s ease-in-out infinite",
+        "hero-drift-3": "hero-drift-3 32s ease-in-out infinite",
+        "slow-pulse": "slow-pulse 8s ease-in-out infinite",
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

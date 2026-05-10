@@ -28,8 +28,15 @@ export default function CommunitySection() {
   const { isLoggedIn } = useAuth();
 
   return (
-    <section className="py-16 md:py-24 bg-card/30" data-testid="community-section">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section
+      className="relative py-16 md:py-24 bg-card/30 border-t border-border/50"
+      data-testid="community-section"
+    >
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent"
+        aria-hidden
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
           <div className="opacity-0 animate-slide-up" style={{ animationDelay: "0.1s" }}>
             <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-4">

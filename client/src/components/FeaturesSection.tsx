@@ -54,8 +54,15 @@ const features = [
 
 export default function FeaturesSection() {
   return (
-    <section className="py-16 md:py-24 bg-background" data-testid="features-section">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section
+      className="relative py-16 md:py-24 bg-background border-t border-border/40 overflow-hidden"
+      data-testid="features-section"
+    >
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-primary/[0.04] to-transparent"
+        aria-hidden
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-3 opacity-0 animate-slide-up">
             What you can do here
