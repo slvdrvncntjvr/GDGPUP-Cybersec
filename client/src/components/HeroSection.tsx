@@ -26,17 +26,16 @@ export default function HeroSection() {
               className="font-display text-4xl sm:text-5xl lg:text-[3.5rem] font-bold tracking-tight text-foreground mb-6 leading-[1.1] opacity-0 animate-slide-up"
               style={{ animationDelay: "0.1s" }}
             >
-              Cybersecurity GDG Department{" "}
-              <span className="text-primary">— learn by doing</span>
+              Cybersecurity labs{" "}
+              <span className="text-primary">for GDG PUP Nexus</span>
             </h1>
 
             <p
               className="text-base sm:text-lg text-muted-foreground max-w-lg mb-8 opacity-0 animate-slide-up"
               style={{ animationDelay: "0.2s" }}
             >
-              Hands-on rooms and guided paths covering blue-team defense and
-              red-team offense. Built for community learners and campus
-              chapters.
+              Guided red-team and blue-team rooms with NEXUS{"{...}"} flags — built
+              by the GDG On Campus cybersec department at PUP.
             </p>
 
             <div
@@ -48,7 +47,7 @@ export default function HeroSection() {
                 data-testid="button-hero-start"
                 onClick={() => openAuthModal("signup")}
               >
-                Start Free
+                Get started
               </Button>
               <Link href="/rooms">
                 <Button

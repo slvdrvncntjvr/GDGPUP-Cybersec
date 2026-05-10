@@ -14,6 +14,7 @@ describe("API routes", () => {
   beforeAll(async () => {
     process.env.NODE_ENV = "test";
     process.env.SESSION_SECRET = "vitest-session-secret";
+    process.env.DATABASE_URL = "";
     app = await setupApp();
   });
 
@@ -199,6 +200,42 @@ describe("API routes", () => {
     });
     expect(res.body.status).toBe("Fail");
   });
+
+  it("concurrent duplicate first-solves award XP only once total", async () => {
+    const agent = request.agent(app);
+    const unique = Date.now();
+    const reg = await agent.post("/api/register").send({
+      username: `race-${unique}@example.com`,
+      password: "password123",
+      name: "Race",
+      team: "red",
+    });
+    expect(reg.status).toBe(201);
+    const me = await agent.get("/api/me");
+    expect(me.status).toBe(200);
+    const teamId = me.body.teamId as string;
+    const red1 = ROOM_BY_CODE.get("RED-1")!;
+    const ch = red1.challenges[0];
+    const valid = renderExpectedFlag(ch.flagTemplate, teamId);
+    const [first, second] = await Promise.all([
+      agent.post("/api/submissions").send({
+        flag: valid,
+        roomId: red1.id,
+        challengeId: ch.id,
+      }),
+      agent.post("/api/submissions").send({
+        flag: valid,
+        roomId: red1.id,
+        challengeId: ch.id,
+      }),
+    ]);
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(201);
+    const awards = [first.body.xpAwarded, second.body.xpAwarded].filter(Boolean);
+    expect(awards.length).toBe(1);
+    const after = await agent.get("/api/me");
+    expect(after.body.xp).toBe(ch.points);
+  });
 });
 
 describe("Support chat", () => {
@@ -207,6 +244,7 @@ describe("Support chat", () => {
   beforeAll(async () => {
     process.env.NODE_ENV = "test";
     process.env.SESSION_SECRET = "vitest-session-secret";
+    process.env.DATABASE_URL = "";
     delete process.env.GEMINI_API_KEY;
     app = await setupApp();
   });

@@ -25,8 +25,11 @@ function requireDb() {
   return db;
 }
 
-function formatTeamId(seq: number): string {
-  return `TEAM${String(seq).padStart(2, "0")}`;
+/** Postgres-safe TEAM ids: TEAM01–TEAM09, TEAM10+, no lpad truncation at 100 (shared with DB logic). */
+export function formatTeamId(seq: number): string {
+  const s = String(seq);
+  const width = Math.max(2, s.length);
+  return `TEAM${s.padStart(width, "0")}`;
 }
 
 // ─── Interfaces ──────────────────────────────────────────────────────────────
@@ -245,7 +248,10 @@ export class DatabaseStorage implements IStorage {
     // Backfill any user that pre-existed without a team_id.
     await database.execute(sql`
       update users
-      set team_id = 'TEAM' || lpad(nextval('users_team_seq')::text, 2, '0')
+      set team_id = (
+        select 'TEAM' || lpad(s.n::text, greatest(2, char_length(s.n::text)), '0')
+        from (select nextval('users_team_seq') as n) s
+      )
       where team_id is null;
     `);
     await database.execute(sql`
@@ -404,7 +410,8 @@ export class DatabaseStorage implements IStorage {
 
     // Pull a unique TEAM-id from the dedicated sequence in a single roundtrip.
     const teamIdRow = await database.execute<{ team_id: string }>(sql`
-      select 'TEAM' || lpad(nextval('users_team_seq')::text, 2, '0') as team_id
+      select 'TEAM' || lpad(s.n::text, greatest(2, char_length(s.n::text)), '0') as team_id
+      from (select nextval('users_team_seq') as n) s
     `);
     const teamId = (teamIdRow as any).rows?.[0]?.team_id as string | undefined;
     if (!teamId) {
@@ -578,7 +585,10 @@ class AutoFallbackStorage implements IStorage {
     try {
       await this.delegate.init();
     } catch (err) {
-      // Keep API available in production even when the managed DB hiccups.
+      // If DATABASE_URL is set, sessions use Postgres; in-memory users would strand sessions.
+      if (hasDatabaseUrl) {
+        throw err;
+      }
       console.warn("[storage] Database init failed, falling back to in-memory mode:", err);
       this.delegate = new MemStorage();
       await this.delegate.init();

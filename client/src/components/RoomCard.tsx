@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { LucideIcon, ArrowRight, Users, Clock } from "lucide-react";
+import { LucideIcon, ArrowRight, Clock } from "lucide-react";
 
 export interface RoomCardProps {
   id: string;
@@ -12,7 +12,6 @@ export interface RoomCardProps {
   icon: LucideIcon;
   difficulty: "Beginner" | "Intermediate" | "Advanced";
   duration: string;
-  participants: number;
   tags: string[];
   team: "blue" | "red";
   progress?: number;
@@ -50,7 +49,6 @@ export default function RoomCard({
   icon: Icon,
   difficulty,
   duration,
-  participants,
   tags,
   team,
   progress,
@@ -158,16 +156,10 @@ export default function RoomCard({
         )}
 
         <div className="flex items-center justify-between pt-4 border-t border-border/50">
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />
-              {duration}
-            </span>
-            <span className="flex items-center gap-1">
-              <Users className="w-3.5 h-3.5" />
-              {participants.toLocaleString()}
-            </span>
-          </div>
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Clock className="w-3.5 h-3.5" />
+            {duration}
+          </span>
 
           <Button
             size="sm"

@@ -4,8 +4,6 @@ export type Team = "blue" | "red";
 
 export type UserSummary = {
   name: string;
-  /** Public profile id used as the visible badge (display only). */
-  gdgId: string;
   /** Server-assigned, persistent TEAM_ID used inside flag templates. */
   teamId: string;
   team: Team; // badge color (blue/red)

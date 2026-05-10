@@ -11,12 +11,10 @@ export default function RoomCardExample() {
         icon={Shield}
         difficulty="Beginner"
         duration="45 min"
-        participants={1234}
         tags={["Blue Team", "SIEM", "Log Analysis"]}
         team="blue"
         progress={65}
         delay={0}
-        onJoin={(id) => console.log(`Joining ${id}`)}
       />
       <RoomCard
         id="web-sqli"
@@ -25,11 +23,9 @@ export default function RoomCardExample() {
         icon={Crosshair}
         difficulty="Intermediate"
         duration="60 min"
-        participants={892}
         tags={["Red Team", "Web", "SQLi"]}
         team="red"
         delay={0.1}
-        onJoin={(id) => console.log(`Joining ${id}`)}
       />
     </div>
   );

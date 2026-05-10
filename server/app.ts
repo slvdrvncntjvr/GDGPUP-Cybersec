@@ -59,6 +59,7 @@ export async function setupApp() {
     limit: 20,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: () => process.env.NODE_ENV === "test",
     message: { message: "Too many attempts, please try again later." },
   });
   app.use("/api/login", authLimiter);
@@ -69,6 +70,7 @@ export async function setupApp() {
     limit: 40,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: () => process.env.NODE_ENV === "test",
     message: { message: "Too many submissions, please slow down." },
   });
   app.use("/api/submissions", submissionsLimiter);
@@ -79,6 +81,7 @@ export async function setupApp() {
     limit: 12,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: () => process.env.NODE_ENV === "test",
     message: {
       source: "ratelimit" as const,
       answer:

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Shield, Crosshair, ArrowRight } from "lucide-react";
@@ -53,7 +52,7 @@ export default function TrackSelector() {
               return (
                 <div
                   key={track.id}
-                  className="p-5 rounded-xl bg-card border border-border/50 hover:border-border transition-colors"
+                  className="p-5 rounded-xl bg-card border border-border/50 hover:border-border transition-colors flex flex-col"
                   data-testid={`track-card-${track.id}`}
                 >
                   <div
@@ -67,9 +66,15 @@ export default function TrackSelector() {
                   <h3 className="font-display text-base font-semibold text-foreground mb-1.5">
                     {track.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground flex-1">
                     {track.description}
                   </p>
+                  <Button asChild variant="outline" size="sm" className="mt-4 gap-1 w-full sm:w-auto">
+                    <Link href="/rooms">
+                      Browse rooms
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </Button>
                 </div>
               );
             })}

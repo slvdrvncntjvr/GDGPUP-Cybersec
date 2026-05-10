@@ -85,7 +85,7 @@ export default function AuthModal({
           password: formData.password,
           rememberMe: formData.rememberMe,
         });
-        toast({ title: "Welcome back! 🎉", description: "You are now logged in." });
+        toast({ title: "Welcome back", description: "You are now logged in." });
       } else {
         await register({
           username: formData.email,
@@ -94,8 +94,8 @@ export default function AuthModal({
           team: formData.team,
         });
         toast({
-          title: "Account created! 🚀",
-          description: `Welcome to GDG Cybersec, ${formData.name}!`,
+          title: "Account created",
+          description: `Welcome, ${formData.name}. You're set to start the rooms.`,
         });
       }
 

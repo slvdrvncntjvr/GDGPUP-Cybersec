@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, Shield, Terminal, Crosshair, ExternalLink, Zap, Lock, Activity, Code } from 'lucide-react';
+import { Shield, Crosshair, ExternalLink, Zap, Lock, Activity, Code } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,7 @@ export default function CommunityHub() {
 
     const steps = [
         { id: 1, title: 'Pick A Team', subtitle: 'Specialize your skillset', icon: <Code className="w-5 h-5 text-primary" /> },
-        { id: 2, title: 'Attend Workshops', subtitle: 'Master the fundamentals', icon: <Lock className="w-5 h-5 text-primary" /> },
+        { id: 2, title: 'Attend Workshops', subtitle: 'Live sessions with the chapter', icon: <Lock className="w-5 h-5 text-primary" /> },
         { id: 3, title: 'Complete Rooms', subtitle: 'Live vulnerability hunting', icon: <Activity className="w-5 h-5 text-primary" /> },
         { id: 4, title: 'Earn XPs & Ranks', subtitle: 'Climb the leaderboard', icon: <Zap className="w-5 h-5 text-primary" /> },
     ];
@@ -104,11 +104,13 @@ export default function CommunityHub() {
                                         className="w-full h-52 object-cover rounded-lg border border-border/50 shadow-inner"
                                     />
                                 ) : (
-                                    <div className="w-full h-52 rounded-lg border border-border/50 bg-background/50 flex flex-col items-center justify-center shadow-inner group-hover:border-primary/20 relative overflow-hidden transition-colors">
-                                        <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500 ease-in-out" />
-                                        <Camera className="w-8 h-8 text-muted-foreground/50 mb-3 group-hover:text-primary/70 transition-colors duration-300 z-10" />
-                                        <span className="font-mono text-[10px] text-muted-foreground/50 group-hover:text-primary/70 transition-colors duration-300 z-10 tracking-widest uppercase">
-                                            [ Awaiting Visual Data ]
+                                    <div className="w-full h-52 rounded-lg border border-border/50 bg-muted/20 flex flex-col items-center justify-center px-4 text-center shadow-inner">
+                                        <span className="text-xs text-muted-foreground leading-snug">
+                                          No cover image yet. When you have one, set{" "}
+                                          <code className="text-[10px] bg-muted px-1 rounded">
+                                            coverUrl
+                                          </code>{" "}
+                                          on this study jam entry.
                                         </span>
                                     </div>
                                 )}

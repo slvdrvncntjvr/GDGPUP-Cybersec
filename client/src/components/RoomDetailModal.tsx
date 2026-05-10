@@ -22,7 +22,6 @@ import {
   BarChart3,
   CheckCircle2,
   Clock,
-  Users,
   X,
 } from "lucide-react";
 import red_logo from "./GDGCybersec-Assets/GDG-ascii-red-transparent.png";
@@ -273,10 +272,6 @@ export default function RoomDetailModal({
             <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <Clock className="w-4 h-4" />
               {room.duration}
-            </span>
-            <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Users className="w-4 h-4" />
-              {room.participants.toLocaleString()} learners
             </span>
             <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <BarChart3 className="w-4 h-4" />

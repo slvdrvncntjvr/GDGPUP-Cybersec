@@ -258,7 +258,6 @@ export default function Dashboard() {
 
   const userSummary: UserSummary = {
     name: apiUser.name,
-    gdgId: `GDG-${apiUser.id.substring(0, 8).toUpperCase()}`,
     teamId: apiUser.teamId,
     team: apiUser.team,
     teamLabel: apiUser.team === "red" ? "Red Team" : "Blue Team",

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
@@ -30,73 +30,6 @@ const iconByRoomCode: Record<RoomCode, LucideIcon> = {
   "BLUE-4": AlertTriangle,
 };
 
-function TypewriterBackground({
-  lines,
-  color,
-}: {
-  lines: string[];
-  color: "blue" | "red";
-}) {
-  const [displayedLines, setDisplayedLines] = useState<string[]>([]);
-  const [currentLineIndex, setCurrentLineIndex] = useState(0);
-  const [currentCharIndex, setCurrentCharIndex] = useState(0);
-
-  useEffect(() => {
-    if (currentLineIndex >= lines.length) {
-      const timeout = setTimeout(() => {
-        setDisplayedLines([]);
-        setCurrentLineIndex(0);
-        setCurrentCharIndex(0);
-      }, 2000);
-      return () => clearTimeout(timeout);
-    }
-
-    const currentLine = lines[currentLineIndex];
-    if (currentCharIndex < currentLine.length) {
-      const timer = setTimeout(() => {
-        setDisplayedLines((prev) => {
-          const newLines = [...prev];
-          if (newLines.length <= currentLineIndex) {
-            newLines.push(currentLine.substring(0, currentCharIndex + 1));
-          } else {
-            newLines[currentLineIndex] = currentLine.substring(
-              0,
-              currentCharIndex + 1
-            );
-          }
-          return newLines;
-        });
-        setCurrentCharIndex((prev) => prev + 1);
-      }, 30 + Math.random() * 40);
-      return () => clearTimeout(timer);
-    } else {
-      const timer = setTimeout(() => {
-        setCurrentLineIndex((prev) => prev + 1);
-        setCurrentCharIndex(0);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [currentLineIndex, currentCharIndex, lines]);
-
-  return (
-    <div
-      className={cn(
-        "absolute inset-0 overflow-hidden font-mono text-xs opacity-20 p-4",
-        color === "blue" ? "text-cyber-blue" : "text-cyber-red"
-      )}
-    >
-      {displayedLines.map((line, i) => (
-        <div key={i} className="whitespace-nowrap">
-          {line}
-          {i === displayedLines.length - 1 && (
-            <span className="animate-pulse">_</span>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 interface MiniRoomCardProps {
   room: RoomContent;
   team: "blue" | "red";
@@ -109,7 +42,9 @@ function MiniRoomCard({ room, team, delay }: MiniRoomCardProps) {
 
   return (
     <div
-      className="group flex items-start justify-between gap-4 p-4 rounded-xl bg-card border border-border/50 transition-all duration-300 hover:border-border opacity-0 animate-slide-up"
+      className={cn(
+        "group flex items-start justify-between gap-4 p-4 rounded-xl bg-card border border-border/50 transition-all duration-300 hover:border-border opacity-0 animate-slide-up"
+      )}
       style={{ animationDelay: `${delay}s` }}
       data-testid={`room-card-${room.id}`}
     >
@@ -174,19 +109,6 @@ function MiniRoomCard({ room, team, delay }: MiniRoomCardProps) {
   );
 }
 
-const blueTypewriterLines = [
-  "$ tail -f /var/log/auth.log",
-  "Monitoring authentication events...",
-  "$ grep 'Failed password' /var/log/auth.log | head",
-  "Failed password for invalid user admin from 192.168.1.105",
-];
-
-const redTypewriterLines = [
-  "$ nmap -sV -sC target.local",
-  "PORT   STATE SERVICE VERSION",
-  "22/tcp open  ssh     OpenSSH 7.9",
-];
-
 export default function DefenseOffenseRooms() {
   const [activeTeam, setActiveTeam] = useState<"none" | "blue" | "red">("none");
 
@@ -212,43 +134,15 @@ export default function DefenseOffenseRooms() {
       className="py-16 md:py-24 bg-background relative overflow-hidden"
       data-testid="defense-offense-rooms"
     >
-      <style>{`
-        @keyframes scanline {
-          0% { transform: translateY(-100%); }
-          100% { transform: translateY(100vh); }
-        }
-        .scanline {
-          position: absolute;
-          width: 100%;
-          height: 2px;
-          background: linear-gradient(90deg, transparent, currentColor, transparent);
-          animation: scanline 3s linear infinite;
-          opacity: 0.1;
-        }
-      `}</style>
-
       <div
         className={cn(
-          "absolute inset-0 transition-all duration-700",
+          "absolute inset-0 transition-all duration-700 pointer-events-none",
           activeTeam === "blue" &&
-            "bg-gradient-to-br from-cyber-blue/5 via-transparent to-cyber-blue/3",
+            "bg-gradient-to-br from-cyber-blue/5 via-transparent to-cyber-blue/[0.03]",
           activeTeam === "red" &&
-            "bg-gradient-to-br from-cyber-red/5 via-transparent to-cyber-red/3"
+            "bg-gradient-to-br from-cyber-red/5 via-transparent to-cyber-red/[0.03]"
         )}
       />
-
-      {activeTeam === "blue" && (
-        <>
-          <TypewriterBackground lines={blueTypewriterLines} color="blue" />
-          <div className="scanline text-cyber-blue" />
-        </>
-      )}
-      {activeTeam === "red" && (
-        <>
-          <TypewriterBackground lines={redTypewriterLines} color="red" />
-          <div className="scanline text-cyber-red" />
-        </>
-      )}
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-10">
@@ -259,8 +153,8 @@ export default function DefenseOffenseRooms() {
             className="text-base text-muted-foreground opacity-0 animate-slide-up"
             style={{ animationDelay: "0.1s" }}
           >
-            Eight sessioned labs from the GDG '26 Cybersec track. Pick a side
-            and jump in.
+            Eight session labs from the GDG PUP cybersec track — pick defense or
+            offense and jump in.
           </p>
         </div>
 
@@ -271,7 +165,7 @@ export default function DefenseOffenseRooms() {
             className={cn(
               "relative rounded-2xl p-1 transition-all duration-500",
               activeTeam === "blue" &&
-                "bg-gradient-to-br from-cyber-blue/20 to-cyber-blue/5 shadow-lg shadow-cyber-blue/10"
+                "bg-gradient-to-br from-cyber-blue/15 to-cyber-blue/5 shadow-md shadow-cyber-blue/5"
             )}
           >
             <div className="bg-background rounded-xl p-4">
@@ -279,43 +173,26 @@ export default function DefenseOffenseRooms() {
                 className="flex items-center gap-2 mb-4 opacity-0 animate-fade-in"
                 style={{ animationDelay: "0.15s" }}
               >
-                <div
-                  className={cn(
-                    "w-8 h-8 rounded-md flex items-center justify-center transition-all duration-300",
-                    activeTeam === "blue" ? "bg-cyber-blue/20" : "bg-primary/10"
-                  )}
-                >
-                  <Shield
-                    className={cn(
-                      "w-4 h-4 transition-colors duration-300",
-                      activeTeam === "blue" ? "text-cyber-blue" : "text-primary"
-                    )}
-                  />
+                <Shield className="w-5 h-5 text-primary" />
+                <h3 className="font-display font-semibold text-lg">Blue Team</h3>
+                <Badge variant="outline" className="text-xs border-primary/30">
+                  Defense
+                </Badge>
+              </div>
+              {isLoading ? (
+                <p className="text-sm text-muted-foreground">Loading rooms…</p>
+              ) : (
+                <div className="space-y-3">
+                  {defenseRooms.map((room, i) => (
+                    <MiniRoomCard
+                      key={room.id}
+                      room={room}
+                      team="blue"
+                      delay={0.02 * i}
+                    />
+                  ))}
                 </div>
-                <span
-                  className={cn(
-                    "text-sm font-medium transition-colors duration-300",
-                    activeTeam === "blue" ? "text-cyber-blue" : "text-foreground"
-                  )}
-                >
-                  Defense (Blue Team)
-                </span>
-              </div>
-              <div className="space-y-3">
-                {isLoading && (
-                  <div className="text-xs text-muted-foreground p-2">
-                    Loading rooms…
-                  </div>
-                )}
-                {defenseRooms.map((room, index) => (
-                  <MiniRoomCard
-                    key={room.id}
-                    room={room}
-                    team="blue"
-                    delay={0.2 + index * 0.08}
-                  />
-                ))}
-              </div>
+              )}
             </div>
           </div>
 
@@ -325,7 +202,7 @@ export default function DefenseOffenseRooms() {
             className={cn(
               "relative rounded-2xl p-1 transition-all duration-500",
               activeTeam === "red" &&
-                "bg-gradient-to-br from-cyber-red/20 to-cyber-red/5 shadow-lg shadow-cyber-red/10"
+                "bg-gradient-to-br from-cyber-red/15 to-cyber-red/5 shadow-md shadow-cyber-red/5"
             )}
           >
             <div className="bg-background rounded-xl p-4">
@@ -333,45 +210,34 @@ export default function DefenseOffenseRooms() {
                 className="flex items-center gap-2 mb-4 opacity-0 animate-fade-in"
                 style={{ animationDelay: "0.15s" }}
               >
-                <div
-                  className={cn(
-                    "w-8 h-8 rounded-md flex items-center justify-center transition-all duration-300",
-                    activeTeam === "red" ? "bg-cyber-red/20" : "bg-cyber-red/10"
-                  )}
-                >
-                  <Crosshair
-                    className={cn(
-                      "w-4 h-4 transition-colors duration-300",
-                      activeTeam === "red" ? "text-cyber-red" : "text-cyber-red"
-                    )}
-                  />
+                <Crosshair className="w-5 h-5 text-cyber-red" />
+                <h3 className="font-display font-semibold text-lg">Red Team</h3>
+                <Badge variant="outline" className="text-xs border-cyber-red/30 text-cyber-red">
+                  Offense
+                </Badge>
+              </div>
+              {isLoading ? (
+                <p className="text-sm text-muted-foreground">Loading rooms…</p>
+              ) : (
+                <div className="space-y-3">
+                  {offenseRooms.map((room, i) => (
+                    <MiniRoomCard
+                      key={room.id}
+                      room={room}
+                      team="red"
+                      delay={0.02 * i}
+                    />
+                  ))}
                 </div>
-                <span
-                  className={cn(
-                    "text-sm font-medium transition-colors duration-300",
-                    activeTeam === "red" ? "text-cyber-red" : "text-foreground"
-                  )}
-                >
-                  Offense (Red Team)
-                </span>
-              </div>
-              <div className="space-y-3">
-                {isLoading && (
-                  <div className="text-xs text-muted-foreground p-2">
-                    Loading rooms…
-                  </div>
-                )}
-                {offenseRooms.map((room, index) => (
-                  <MiniRoomCard
-                    key={room.id}
-                    room={room}
-                    team="red"
-                    delay={0.2 + index * 0.08}
-                  />
-                ))}
-              </div>
+              )}
             </div>
           </div>
+        </div>
+
+        <div className="flex justify-center mt-10">
+          <Button asChild variant="outline">
+            <Link href="/rooms">Browse full catalog</Link>
+          </Button>
         </div>
       </div>
     </section>

@@ -21,8 +21,8 @@ export default function CTASection() {
         </h2>
 
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10 opacity-0 animate-slide-up" style={{ animationDelay: "0.2s" }}>
-          Join thousands of learners mastering cybersecurity through hands-on
-          rooms, guided paths, and community-driven practice.
+          Create an account to track TEAM_ID, submit flags, and show up on the
+          chapter leaderboard.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center opacity-0 animate-slide-up" style={{ animationDelay: "0.3s" }}>
@@ -32,7 +32,7 @@ export default function CTASection() {
             data-testid="button-cta-start"
             onClick={() => openAuthModal("signup")}
           >
-            Get Started Free
+            Get started
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Button>
           <Link href="/rooms">
@@ -50,7 +50,7 @@ export default function CTASection() {
         <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10 mt-12 pt-10 border-t border-border/50 opacity-0 animate-fade-in" style={{ animationDelay: "0.4s" }}>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Shield className="w-4 h-4 text-primary" />
-            20+ interactive rooms
+            8 sessioned rooms
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Lock className="w-4 h-4 text-primary" />

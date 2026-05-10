@@ -9,7 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 
 type Props = {
   user: UserSummary;
-  onCopyGdgId?: (gdgId: string) => Promise<void> | void;
 };
 
 async function copyText(value: string): Promise<void> {
@@ -46,7 +45,7 @@ function getInitials(name: string) {
   return (first + last).trim() || first;
 }
 
-export default function ProfileCard({ user, onCopyGdgId }: Props) {
+export default function ProfileCard({ user }: Props) {
   const { toast } = useToast();
 
   const xpPercent =
@@ -57,26 +56,6 @@ export default function ProfileCard({ user, onCopyGdgId }: Props) {
   const initials = useMemo(() => getInitials(user.name ?? ""), [user.name]);
 
   const TeamIcon = user.team === "blue" ? Shield : Crosshair;
-
-  const copyIdToClipboard = async () => {
-    try {
-      if (onCopyGdgId) {
-        await onCopyGdgId(user.gdgId);
-      } else {
-        await copyText(user.gdgId);
-      }
-      toast({
-        title: "ID copied",
-        description: "Your GDG ID has been copied to clipboard.",
-      });
-    } catch {
-      toast({
-        title: "Copy failed",
-        description: "Could not copy ID. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const copyTeamIdToClipboard = async () => {
     try {
@@ -98,7 +77,6 @@ export default function ProfileCard({ user, onCopyGdgId }: Props) {
     <Card className="mb-8">
       <CardContent className="p-6">
         <div className="grid gap-6 md:grid-cols-[180px_1fr]">
-          {/* Avatar Section */}
           <div className="flex flex-col items-center justify-center">
             <div className="flex h-44 w-44 items-center justify-center rounded-md border bg-muted/30">
               <Avatar className="h-24 w-24">
@@ -108,7 +86,6 @@ export default function ProfileCard({ user, onCopyGdgId }: Props) {
             </div>
           </div>
 
-          {/* Info Section */}
           <div className="flex flex-col justify-between gap-4">
             <div>
               <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
@@ -116,31 +93,13 @@ export default function ProfileCard({ user, onCopyGdgId }: Props) {
                   {user.name}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* GDG ID (click to copy) */}
-                  <button
-                    type="button"
-                    onClick={copyIdToClipboard}
-                    className="inline-flex"
-                    title="Click to copy ID"
-                  >
-                    <Badge
-                      variant="secondary"
-                      className="cursor-pointer select-none hover:bg-muted transition-colors"
-                    >
-                      {user.gdgId}
-                    </Badge>
-                  </button>
-
-                  {/* Team badge with correct icon */}
-                  <Badge
-                    variant="outline"
-                    className={`gap-1 ${teamBadgeClass(user.team)}`}
-                  >
-                    <TeamIcon className="h-3.5 w-3.5" />
-                    {user.teamLabel}
-                  </Badge>
-                </div>
+                <Badge
+                  variant="outline"
+                  className={`gap-1 ${teamBadgeClass(user.team)}`}
+                >
+                  <TeamIcon className="h-3.5 w-3.5" />
+                  {user.teamLabel}
+                </Badge>
               </div>
 
               <p className="mt-2 text-sm text-muted-foreground">
@@ -165,15 +124,13 @@ export default function ProfileCard({ user, onCopyGdgId }: Props) {
               </div>
             </div>
 
-            {/* XP Section */}
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
                   XP Progress
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {/* TODO (backend): Replace with real stats endpoint */}
-                  {user.xp}/{user.xpGoal}XP
+                  {user.xp}/{user.xpGoal} XP
                 </span>
               </div>
 
@@ -182,7 +139,7 @@ export default function ProfileCard({ user, onCopyGdgId }: Props) {
               <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
                   <Trophy className="h-3.5 w-3.5" />
-                  Level-up by completing rooms
+                  Level up by completing rooms
                 </span>
                 <span>{xpPercent}%</span>
               </div>

@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Shield, Github, Twitter, Linkedin, Youtube } from "lucide-react";
+import { Github, Twitter, Linkedin, Youtube } from "lucide-react";
 import logo from "./GDGCybersec-Assets/GDGAscii2.1.png";
 
 const footerLinks = {
@@ -52,18 +52,26 @@ export default function Footer() {
                     />
                   <div>
                     <span className="font-display font-semibold text-foreground block">
-                      Cybersecurity GDG
+                      Cybersecurity · GDG PUP
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      Learn security by doing
+                      Google Developer Groups on Campus — Polytechnic University of the Philippines
                     </span>
                   </div>
                 </div>
               </Link>
 
               <p className="text-sm text-muted-foreground max-w-xs mb-6">
-                A community-led initiative focused on hands-on cybersecurity
-                learning for students and professionals.
+                Hands-on cyber labs extending{" "}
+                <a
+                  href="https://gdgpup.org/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  GDG PUP Nexus
+                </a>
+                .
               </p>
 
               <div className="flex items-center gap-3">
@@ -106,7 +114,8 @@ export default function Footer() {
 
         <div className="py-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            2024 Cybersecurity GDG Department. All rights reserved.
+            © {new Date().getFullYear()} Google Developer Groups on Campus PUP —
+            Cybersecurity department. All rights reserved.
           </p>
 
           <div className="flex items-center gap-6 text-sm text-muted-foreground">

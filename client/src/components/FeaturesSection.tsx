@@ -4,49 +4,49 @@ import { Shield, Crosshair, Award, Server, Terminal, Users } from "lucide-react"
 const features = [
   {
     icon: Shield,
-    title: "Defensive Blue Team",
+    title: "Blue team (defense)",
     description:
-      "SIEM, log analysis, threat hunting, incident response, and hardening labs.",
+      "Host hardening, logs, monitoring basics, and incident-response style scenarios.",
     iconColor: "text-primary",
     iconBgColor: "bg-primary/10",
   },
   {
     icon: Crosshair,
-    title: "Offensive Red Team",
+    title: "Red team (offense)",
     description:
-      "Web exploitation, privilege escalation, OSINT, and network penetration labs.",
+      "Web exploitation, privilege escalation concepts, and adversary-style labs.",
     iconColor: "text-cyber-red",
     iconBgColor: "bg-cyber-red/10",
   },
   {
     icon: Award,
-    title: "Cert Prep Paths",
+    title: "Session map (RED / BLUE 1–4)",
     description:
-      "Guided paths for Security+, CEH, eJPT, and more with exam-style challenges.",
+      "Eight PDF-aligned rooms so you can follow the official workshop structure.",
     iconColor: "text-chart-4",
     iconBgColor: "bg-chart-4/10",
   },
   {
     icon: Server,
-    title: "Real Scenarios",
+    title: "Hands-on writeups",
     description:
-      "Mission-based rooms simulating enterprise networks and realistic attack chains.",
+      "Step-by-step instructions and verification tips inside each room modal.",
     iconColor: "text-primary",
     iconBgColor: "bg-primary/10",
   },
   {
     icon: Terminal,
-    title: "Built-in Tools",
+    title: "Same flag format everywhere",
     description:
-      "Browser terminals, code runners, packet analyzers, and vulnerable apps.",
+      "Submit NEXUS-style flags bound to your TEAM_ID so scores stay fair per learner.",
     iconColor: "text-cyber-blue",
     iconBgColor: "bg-cyber-blue/10",
   },
   {
     icon: Users,
-    title: "Community Progress",
+    title: "Chapter-led",
     description:
-      "Badges, leaderboards, and chapter contributions from the GDG Department.",
+      "Built for GDG On Campus PUP — cybersec department, extending Nexus.",
     iconColor: "text-chart-5",
     iconBgColor: "bg-chart-5/10",
   },
@@ -58,11 +58,11 @@ export default function FeaturesSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-3 opacity-0 animate-slide-up">
-            Everything you need to learn security by doing
+            What you can do here
           </h2>
           <p className="text-base text-muted-foreground opacity-0 animate-slide-up" style={{ animationDelay: "0.1s" }}>
-            Interactive rooms, guided paths, and hands-on labs led by the
-            Cybersecurity GDG Department.
+            Eight guided rooms, team-aware challenges, and XP that match the official
+            catalog — no inflated promises.
           </p>
         </div>
 

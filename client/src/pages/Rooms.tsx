@@ -61,7 +61,6 @@ interface RoomCardModel {
   icon: LucideIcon;
   difficulty: "Beginner" | "Intermediate" | "Advanced";
   duration: string;
-  participants: number;
   tags: string[];
   team: "blue" | "red";
   progress: number;
@@ -133,7 +132,6 @@ export default function Rooms() {
         icon: iconByRoomCode[room.roomCode] ?? Shield,
         difficulty: room.difficulty,
         duration: room.duration,
-        participants: room.participants,
         tags: room.tags,
         team: room.team,
         progress,
@@ -379,7 +377,6 @@ export default function Rooms() {
                       icon={room.icon}
                       difficulty={room.difficulty}
                       duration={room.duration}
-                      participants={room.participants}
                       tags={room.tags}
                       team={room.team}
                       progress={room.progress}
