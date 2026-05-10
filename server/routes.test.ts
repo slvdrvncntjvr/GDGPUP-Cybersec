@@ -201,6 +201,44 @@ describe("API routes", () => {
   });
 });
 
+describe("Support chat", () => {
+  let app: Awaited<ReturnType<typeof setupApp>>;
+
+  beforeAll(async () => {
+    process.env.NODE_ENV = "test";
+    process.env.SESSION_SECRET = "vitest-session-secret";
+    delete process.env.GEMINI_API_KEY;
+    app = await setupApp();
+  });
+
+  it("falls back to FAQ when GEMINI_API_KEY is unset", async () => {
+    const res = await request(app)
+      .post("/api/support/chat")
+      .send({ message: "What is my TEAM_ID?" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.source).toBe("faq");
+    expect(res.body.answer).toMatch(/TEAM_ID/i);
+  });
+
+  it("rejects empty messages", async () => {
+    const res = await request(app)
+      .post("/api/support/chat")
+      .send({ message: "" });
+    expect(res.status).toBe(400);
+  });
+
+  it("returns the generic fallback for off-topic input", async () => {
+    const res = await request(app)
+      .post("/api/support/chat")
+      .send({ message: "tell me about quantum chromodynamics" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.source).toBe("faq");
+    expect(res.body.answer).toMatch(/static FAQ/i);
+  });
+});
+
 describe("Catalog shape", () => {
   it("has unique room ids and challenge ids", () => {
     const ids = new Set<string>();

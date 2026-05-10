@@ -73,6 +73,20 @@ export async function setupApp() {
   });
   app.use("/api/submissions", submissionsLimiter);
 
+  // Tight cap on the support bot to protect Gemini quota / serverless cost.
+  const supportLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: 12,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      source: "ratelimit" as const,
+      answer:
+        "Too many questions in a short window. Please wait a minute and try again.",
+    },
+  });
+  app.use("/api/support", supportLimiter);
+
   // ─── Session Store ─────────────────────────────────────────────────────────
   // Use Neon-backed Postgres sessions in production; in-memory in dev.
 

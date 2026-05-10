@@ -11,6 +11,11 @@ import { hashPassword } from "./auth";
 import { getChallengeMeta } from "./challenges";
 import { ROOMS_CATALOG } from "@shared/challengeCatalog";
 import { buildRoomsContentResponse } from "@shared/content";
+import {
+  answerFromFaq,
+  SUPPORT_SYSTEM_INSTRUCTION,
+} from "@shared/supportFaq";
+import { askGemini, isGeminiConfigured, type GeminiTurn } from "./gemini";
 
 const SESSION_7_DAYS_MS = 1000 * 60 * 60 * 24 * 7;
 const SESSION_30_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
@@ -19,6 +24,20 @@ const dashboardQuerySchema = z.object({
 });
 const leaderboardQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(10),
+});
+
+const supportChatSchema = z.object({
+  message: z.string().trim().min(1, "Message is empty").max(800, "Message too long"),
+  history: z
+    .array(
+      z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string().trim().min(1).max(1500),
+      })
+    )
+    .max(10)
+    .optional()
+    .default([]),
 });
 
 type AsyncHandler = (req: any, res: any, next: any) => Promise<unknown>;
@@ -234,6 +253,47 @@ export async function registerRoutes(app: Express): Promise<void> {
         user: storage.toPublic(freshUser),
         submissions,
       });
+    })
+  );
+
+  // ── POST /api/support/chat ────────────────────────────────────────────────
+
+  app.post(
+    "/api/support/chat",
+    withAsync(async (req, res) => {
+      const parsed = supportChatSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          source: "error" as const,
+          answer:
+            parsed.error.errors[0]?.message ?? "Invalid support request.",
+        });
+      }
+
+      const { message, history } = parsed.data;
+      const fallback = answerFromFaq(message);
+
+      if (!isGeminiConfigured()) {
+        return res.json({ source: "faq" as const, answer: fallback });
+      }
+
+      const turns: GeminiTurn[] = [
+        ...history.map((turn) => ({
+          role: turn.role === "assistant" ? ("model" as const) : ("user" as const),
+          text: turn.content,
+        })),
+        { role: "user" as const, text: message },
+      ];
+
+      const reply = await askGemini({
+        systemInstruction: SUPPORT_SYSTEM_INSTRUCTION,
+        history: turns,
+      });
+
+      if (!reply) {
+        return res.json({ source: "faq" as const, answer: fallback });
+      }
+      return res.json({ source: "gemini" as const, answer: reply });
     })
   );
 

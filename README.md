@@ -66,6 +66,20 @@ XP is awarded per-challenge (15–60 each) and only on the **first** successful
 solve of that `(user, room, challenge)` triple, enforced atomically by a unique
 `user_solves` table. Repeated submissions log the attempt without doubling XP.
 
+### Support Bot (optional Gemini)
+
+The floating help bot has two modes, picked automatically:
+
+- **Static FAQ** (default) — answers from `shared/supportFaq.ts`. Covers
+  TEAM_ID, NEXUS flag format, room codes, XP, login.
+- **Gemini** (when `GEMINI_API_KEY` is set) — proxies to
+  `gemini-2.5-flash` via `POST /api/support/chat` with a tight system prompt
+  that scopes answers to the platform and refuses to leak literal flags or
+  off-topic content. The endpoint is rate-limited (12 req/min/IP), times out
+  after 12s, and falls back to the FAQ on any failure. Override the model via
+  `GEMINI_MODEL`. Each assistant bubble shows a small badge so you always know
+  whether you got Gemini or the FAQ.
+
 ## Tech Stack
 
 - Frontend: React 18, Vite, TypeScript, Tailwind, Radix UI, TanStack Query.

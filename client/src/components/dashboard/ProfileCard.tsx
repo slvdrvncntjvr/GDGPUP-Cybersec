@@ -1,16 +1,14 @@
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Shield, Trophy, Camera, Crosshair, KeyRound } from "lucide-react";
+import { Shield, Trophy, Crosshair, KeyRound } from "lucide-react";
 import type { UserSummary } from "./types";
 import { useToast } from "@/hooks/use-toast";
 
 type Props = {
   user: UserSummary;
-  onUploadPhoto?: () => void;
   onCopyGdgId?: (gdgId: string) => Promise<void> | void;
 };
 
@@ -48,11 +46,7 @@ function getInitials(name: string) {
   return (first + last).trim() || first;
 }
 
-export default function ProfileCard({
-  user,
-  onUploadPhoto,
-  onCopyGdgId,
-}: Props) {
+export default function ProfileCard({ user, onCopyGdgId }: Props) {
   const { toast } = useToast();
 
   const xpPercent =
@@ -103,29 +97,15 @@ export default function ProfileCard({
   return (
     <Card className="mb-8">
       <CardContent className="p-6">
-        <div className="grid gap-6 md:grid-cols-[220px_1fr]">
+        <div className="grid gap-6 md:grid-cols-[180px_1fr]">
           {/* Avatar Section */}
-          <div className="flex flex-col items-center gap-3">
-            <div className="flex h-44 w-full items-center justify-center rounded-md border bg-muted/30">
-              <Avatar className="h-20 w-20">
-                {/* TODO (backend): Supply real avatarUrl from user profile API */}
+          <div className="flex flex-col items-center justify-center">
+            <div className="flex h-44 w-44 items-center justify-center rounded-md border bg-muted/30">
+              <Avatar className="h-24 w-24">
                 <AvatarImage src={user.avatarUrl ?? ""} alt={`${user.name} avatar`} />
-                <AvatarFallback>{initials}</AvatarFallback>
+                <AvatarFallback className="text-xl">{initials}</AvatarFallback>
               </Avatar>
             </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full gap-2"
-              onClick={() => {
-                // TODO (backend): Implement upload flow (signed URL / storage service)
-                onUploadPhoto?.();
-              }}
-            >
-              <Camera className="h-4 w-4" />
-              Upload photo
-            </Button>
           </div>
 
           {/* Info Section */}
