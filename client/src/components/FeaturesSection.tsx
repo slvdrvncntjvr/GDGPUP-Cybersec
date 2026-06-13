@@ -1,10 +1,10 @@
 import FeatureCard from "./FeatureCard";
-import { Shield, Crosshair, Award, Server, Terminal, Users } from "lucide-react";
+import { Shield, Crosshair, Server, Terminal, Users } from "lucide-react";
 
 const features = [
   {
     icon: Shield,
-    title: "Blue team (defense)",
+    title: "Blue Team (Defense)",
     description:
       "Host hardening, logs, monitoring basics, and incident-response style scenarios.",
     iconColor: "text-primary",
@@ -12,23 +12,15 @@ const features = [
   },
   {
     icon: Crosshair,
-    title: "Red team (offense)",
+    title: "Red Team (Offense)",
     description:
       "Web exploitation, privilege escalation concepts, and adversary-style labs.",
     iconColor: "text-cyber-red",
     iconBgColor: "bg-cyber-red/10",
   },
   {
-    icon: Award,
-    title: "Session map (RED / BLUE 1–4)",
-    description:
-      "Eight PDF-aligned rooms so you can follow the official workshop structure.",
-    iconColor: "text-chart-4",
-    iconBgColor: "bg-chart-4/10",
-  },
-  {
     icon: Server,
-    title: "Hands-on writeups",
+    title: "Hands-On Writeups",
     description:
       "Step-by-step instructions and verification tips inside each room modal.",
     iconColor: "text-primary",
@@ -36,7 +28,7 @@ const features = [
   },
   {
     icon: Terminal,
-    title: "Tracked progress",
+    title: "Tracked Progress",
     description:
       "Earn XP as you complete challenges—leaderboards reflect how the chapter is leveling up together.",
     iconColor: "text-cyber-blue",
@@ -44,7 +36,7 @@ const features = [
   },
   {
     icon: Users,
-    title: "Chapter-led",
+    title: "Chapter-Led",
     description:
       "Built for GDG On Campus PUP — cybersec department, extending Nexus.",
     iconColor: "text-chart-5",

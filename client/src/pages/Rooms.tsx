@@ -9,6 +9,7 @@ import RoomDetailModal from "@/components/RoomDetailModal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -403,8 +404,30 @@ export default function Rooms() {
               </Button>
             </div>
           ) : isLoadingRooms ? (
-            <div className="text-center py-16">
-              <p className="text-muted-foreground">Loading rooms...</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-full p-6 rounded-2xl bg-card border border-border/50"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <Skeleton className="w-12 h-12 rounded-md" />
+                    <Skeleton className="w-16 h-5 rounded-md" />
+                  </div>
+                  <Skeleton className="h-5 w-3/4 mb-3" />
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-5/6 mb-4" />
+                  <div className="flex gap-1.5 mb-4">
+                    <Skeleton className="h-5 w-14 rounded-full" />
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                  </div>
+                  <Skeleton className="h-1.5 w-full mb-4 rounded-full" />
+                  <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-8 w-16 rounded-md" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <>
@@ -417,7 +440,7 @@ export default function Rooms() {
                   <div
                     key={room.id}
                     onClick={() => openRoom(room.id)}
-                    className="cursor-pointer"
+                    className="cursor-pointer h-full"
                   >
                     <RoomCard
                       id={room.id}

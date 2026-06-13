@@ -71,7 +71,7 @@ export default function RoomCard({
   return (
     <div
       className={cn(
-        "group relative p-6 rounded-2xl bg-card border border-border/50 transition-all duration-300",
+        "group relative h-full p-6 rounded-2xl bg-card border border-border/50 transition-all duration-300",
         "hover:-translate-y-1 hover:border-border hover:shadow-xl",
         colors.glow,
         "opacity-0 animate-slide-up"

@@ -75,8 +75,9 @@ export function RoomLab({
             return (
               <div
                 key={challenge.id}
+                id={`challenge-${challenge.id}`}
                 className={cn(
-                  "rounded-xl border p-5 transition-colors",
+                  "scroll-mt-4 rounded-xl border p-5 transition-colors",
                   completed
                     ? "bg-muted/30 border-border/50"
                     : "bg-card border-border/70"

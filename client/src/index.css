@@ -153,6 +153,10 @@
 
   html {
     scroll-behavior: smooth;
+    /* Reserve the scrollbar gutter so opening Radix overlays (Select,
+       Dialog, Dropdown) that lock body scroll doesn't remove the scrollbar
+       and shift the fixed navbar / centered layout to the right. */
+    scrollbar-gutter: stable;
   }
 
   body {

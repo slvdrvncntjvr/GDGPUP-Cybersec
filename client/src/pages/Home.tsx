@@ -39,7 +39,7 @@ export default function Home() {
         <FeaturesSection />
         <CommunitySection />
       </main>
-      <Footer />
+      <Footer className="max-md:!pb-40" />
       <MobileNav />
       <FloatingSupportBot />
     </div>

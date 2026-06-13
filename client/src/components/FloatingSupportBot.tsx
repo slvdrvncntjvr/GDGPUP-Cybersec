@@ -229,7 +229,7 @@ export default function FloatingSupportBot() {
 
       <div
         ref={containerRef}
-        className="fixed z-50 select-none"
+        className="fixed z-50 select-none max-md:!bottom-24"
         style={{
           right: position.x,
           bottom: position.y,

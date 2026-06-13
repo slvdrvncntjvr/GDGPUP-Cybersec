@@ -7,6 +7,7 @@ import {
   Youtube,
   ExternalLink,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import logo from "./GDGCybersec-Assets/GDGAscii2.1.png";
 
 /** Simple TikTok glyph (Lucide omits brand). */
@@ -39,7 +40,7 @@ const socialLinks = [
 const footerExplore = [
   { label: "Home", href: "/", internal: true },
   { label: "Community Hub", href: "/community", internal: true },
-  { label: "Training labs", href: "/rooms", internal: true },
+  { label: "Training Labs", href: "/rooms", internal: true },
   { label: "My Progress", href: "/dashboard", internal: true },
 ];
 
@@ -53,9 +54,12 @@ const gdSites = [
   },
 ];
 
-export default function Footer() {
+export default function Footer({ className }: { className?: string }) {
   return (
-    <footer className="bg-card border-t border-border/50" data-testid="footer">
+    <footer
+      className={cn("bg-card border-t border-border/50 pb-20 md:pb-0", className)}
+      data-testid="footer"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-12 md:py-16">
           <div className="grid grid-cols-2 md:grid-cols-6 gap-8">
@@ -146,7 +150,7 @@ export default function Footer() {
             </div>
 
             <div>
-              <h3 className="font-semibold text-foreground mb-4 text-sm">GDG&nbsp;chapter</h3>
+              <h3 className="font-semibold text-foreground mb-4 text-sm">GDG&nbsp;Chapter</h3>
               <ul className="space-y-3">
                 {gdSites.map((link) => (
                   <li key={link.label}>
@@ -170,7 +174,7 @@ export default function Footer() {
                 <li>
                   <Link href="/community">
                     <span className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-                      Workshops & jams
+                      Workshops & Jams
                     </span>
                   </Link>
                 </li>
@@ -181,7 +185,7 @@ export default function Footer() {
                     rel="noreferrer"
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Chapter updates (Facebook)
+                    Chapter Updates (Facebook)
                   </a>
                 </li>
                 <li>
@@ -191,7 +195,7 @@ export default function Footer() {
                     rel="noreferrer"
                     className="text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
                   >
-                    Discord server
+                    Discord Server
                     <ExternalLink className="w-3 h-3 opacity-70" />
                   </a>
                 </li>
@@ -211,7 +215,7 @@ export default function Footer() {
               <span className="hover:text-foreground cursor-pointer">Community</span>
             </Link>
             <a href="mailto:gdg.pup.cybersec@gmail.com" className="hover:text-foreground">
-              Contact cybersec
+              Contact Cybersec
             </a>
           </div>
         </div>

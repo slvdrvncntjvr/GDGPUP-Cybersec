@@ -85,7 +85,7 @@ export default function CommunitySection() {
           <div className="opacity-0 animate-slide-in-right" style={{ animationDelay: "0.2s" }}>
             <div className="p-5 rounded-xl bg-card border border-border/50">
               <h3 className="font-display text-base font-semibold text-foreground mb-4">
-                How it works
+                How It Works
               </h3>
 
               <ul className="space-y-3">

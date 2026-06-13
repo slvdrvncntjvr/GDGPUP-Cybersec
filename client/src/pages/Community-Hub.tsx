@@ -92,7 +92,7 @@ export default function CommunityHub() {
         <Navbar />
       </div>
 
-      <main className="flex-1 relative z-10 px-4 sm:px-6 lg:px-10 py-10 md:py-14 max-w-7xl mx-auto w-full">
+      <main className="flex-1 relative z-10 px-4 sm:px-6 lg:px-10 pt-24 md:pt-28 pb-12 md:pb-16 max-w-7xl mx-auto w-full">
         <header className="text-center lg:text-left mb-14 max-w-3xl mx-auto lg:mx-0 space-y-4">
           <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground font-medium">
             GDG PUP · Cybersecurity

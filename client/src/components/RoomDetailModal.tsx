@@ -22,7 +22,6 @@ import {
   BarChart3,
   CheckCircle2,
   Clock,
-  X,
 } from "lucide-react";
 import red_logo from "./GDGCybersec-Assets/GDG-ascii-red-transparent.png";
 import blue_logo from "./GDGCybersec-Assets/GDG-ascii-blue-transparent.png";
@@ -67,6 +66,7 @@ export default function RoomDetailModal({
   const [pendingChallengeId, setPendingChallengeId] = useState<string | null>(
     null
   );
+  const [scrollTargetId, setScrollTargetId] = useState<string | null>(null);
 
   const { user, isLoggedIn } = useAuth();
   const { toast } = useToast();
@@ -82,8 +82,21 @@ export default function RoomDetailModal({
     if (!open) {
       setFlagInputs({});
       setPendingChallengeId(null);
+      setScrollTargetId(null);
     }
   }, [open]);
+
+  // After switching to the Challenges tab, scroll the targeted challenge into
+  // view so the primary CTA always produces a visible result.
+  useEffect(() => {
+    if (activeTab !== "challenges" || !scrollTargetId) return;
+    const raf = requestAnimationFrame(() => {
+      const el = document.getElementById(`challenge-${scrollTargetId}`);
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setScrollTargetId(null);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [activeTab, scrollTargetId]);
 
   const solvedSet = useMemo(
     () => new Set(solvedChallengeIds),
@@ -100,6 +113,7 @@ export default function RoomDetailModal({
     totalChallenges > 0
       ? Math.round((completedChallenges / totalChallenges) * 100)
       : 0;
+  const allSolved = totalChallenges > 0 && completedChallenges === totalChallenges;
 
   const submitMut = useMutation({
     mutationFn: async (data: {
@@ -188,13 +202,20 @@ export default function RoomDetailModal({
   };
 
   const handlePrimaryAction = () => {
+    // Always reveal the challenges, even when the room is fully solved or the
+    // user is signed out — the CTA should never feel like a dead button.
     setActiveTab("challenges");
-    const nextChallenge = room.challenges.find(
-      (challenge) => !solvedSet.has(challenge.id)
-    )?.id;
-    if (nextChallenge && onNavigateChallenge) {
-      onNavigateChallenge(nextChallenge);
+
+    const target =
+      room.challenges.find((challenge) => !solvedSet.has(challenge.id))?.id ??
+      room.challenges[0]?.id ??
+      null;
+
+    if (target) {
+      if (onNavigateChallenge) onNavigateChallenge(target);
+      setScrollTargetId(target);
     }
+
     if (!isLoggedIn) {
       toast({
         title: "Create your account",
@@ -231,15 +252,6 @@ export default function RoomDetailModal({
               room.team === "blue" ? "glow-blue" : "glow-red"
             )}
           />
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-4 right-4"
-            onClick={() => onOpenChange(false)}
-          >
-            <X className="w-4 h-4" />
-          </Button>
 
           <div className="flex items-center gap-4">
             <div
@@ -406,8 +418,16 @@ export default function RoomDetailModal({
               data-testid="button-continue-room"
               onClick={handlePrimaryAction}
             >
-              {completedChallenges > 0 ? "Continue Room" : "Start Room"}
-              <ArrowRight className="w-4 h-4" />
+              {allSolved
+                ? "Review Room"
+                : completedChallenges > 0
+                  ? "Continue Room"
+                  : "Start Room"}
+              {allSolved ? (
+                <CheckCircle2 className="w-4 h-4" />
+              ) : (
+                <ArrowRight className="w-4 h-4" />
+              )}
             </Button>
           </div>
         </div>
