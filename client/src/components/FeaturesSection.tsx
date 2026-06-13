@@ -46,11 +46,14 @@ const features = [
 
 export default function FeaturesSection() {
   return (
-    <section className="py-16 md:py-24 bg-background" data-testid="features-section">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="relative py-16 md:py-24 bg-background" data-testid="features-section">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-3 opacity-0 animate-slide-up">
-            What you can do here
+          <span className="mb-4 inline-block rounded-full border border-border/60 bg-card/60 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground opacity-0 animate-slide-up">
+            What you can do
+          </span>
+          <h2 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-3 opacity-0 animate-slide-up" style={{ animationDelay: "0.05s" }}>
+            A workshop, turned into a lab
           </h2>
           <p className="text-base text-muted-foreground opacity-0 animate-slide-up" style={{ animationDelay: "0.1s" }}>
             Eight guided rooms, team-aware challenges, and XP that match the official
@@ -64,6 +67,7 @@ export default function FeaturesSection() {
               key={feature.title}
               {...feature}
               delay={0.08 * (index + 1)}
+              className={index === 0 ? "md:col-span-2 lg:col-span-2" : ""}
             />
           ))}
         </div>

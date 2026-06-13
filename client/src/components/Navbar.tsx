@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Shield, LayoutGrid, LogOut, Crosshair, BookOpen } from "lucide-react";
 import { openAuthModal } from "@/lib/openAuthModal";
 import AuthModal from "./AuthModal";
+import BrandMark from "./BrandMark";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -111,10 +112,8 @@ export default function Navbar() {
             <Link href="/" data-testid="link-home">
               <div className="flex items-center gap-3 group cursor-pointer">
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center border border-primary/20 group-hover:border-primary/40 transition-colors">
-                    <Shield className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="absolute inset-0 rounded-md bg-primary/20 blur-xl opacity-0 group-hover:opacity-50 transition-opacity" />
+                  <BrandMark className="w-10 h-10 transition-transform group-hover:scale-105" />
+                  <div className="absolute inset-0 rounded-xl bg-primary/30 blur-xl opacity-0 group-hover:opacity-60 transition-opacity" />
                 </div>
                 <div className="flex flex-col">
                   <span className="font-display font-semibold text-sm md:text-base text-foreground">
@@ -221,9 +220,7 @@ export default function Navbar() {
                 <SheetContent side="right" className="w-80 bg-card">
                   <div className="flex flex-col gap-6 mt-8">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center border border-primary/20">
-                        <Shield className="w-5 h-5 text-primary" />
-                      </div>
+                      <BrandMark className="w-10 h-10" />
                       <span className="font-display font-semibold">Cybersecurity · GDG PUP</span>
                     </div>
 

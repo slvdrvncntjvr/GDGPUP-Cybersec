@@ -32,7 +32,10 @@ export default function CommunitySection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
           <div className="opacity-0 animate-slide-up" style={{ animationDelay: "0.1s" }}>
-            <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-4">
+            <span className="mb-4 inline-block rounded-full border border-border/60 bg-card/60 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              The chapter
+            </span>
+            <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-4">
               Cybersecurity · GDG PUP
             </h2>
             <p className="text-base text-muted-foreground mb-6">
@@ -44,10 +47,10 @@ export default function CommunitySection() {
               {cards.map((card, index) => (
                 <div
                   key={card.title}
-                  className="p-4 rounded-xl bg-card border border-border/50"
+                  className="group p-5 rounded-2xl bg-card/40 border border-border/50 backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30"
                   data-testid={`community-card-${index}`}
                 >
-                  <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center mb-3">
+                  <div className="w-9 h-9 rounded-lg bg-primary/10 ring-1 ring-inset ring-white/5 flex items-center justify-center mb-3">
                     <card.icon className="w-4.5 h-4.5 text-primary" />
                   </div>
                   <h3 className="font-display font-semibold text-sm text-foreground mb-1">
@@ -83,7 +86,7 @@ export default function CommunitySection() {
           </div>
 
           <div className="opacity-0 animate-slide-in-right" style={{ animationDelay: "0.2s" }}>
-            <div className="p-5 rounded-xl bg-card border border-border/50">
+            <div className="p-6 rounded-2xl bg-card/40 border border-border/50 backdrop-blur-sm">
               <h3 className="font-display text-base font-semibold text-foreground mb-4">
                 How It Works
               </h3>
